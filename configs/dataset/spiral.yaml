@@ -1,0 +1,7 @@
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+_target_: blueprint.datasets.Sample2DDataset
+length: ${n_training_samples}
+seed: ${seed}
+dist: spiral

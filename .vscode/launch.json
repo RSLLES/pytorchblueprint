@@ -1,0 +1,31 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Test current file",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pytest",
+            "args": [
+                "${file}"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Current file with arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": "${command:pickArgs} ++n_workers=0 ++batch_size=5 ++compile=false",
+            // "justMyCode": false,
+            "justMyCode": true,
+            "env": {
+                "HYDRA_FULL_ERROR": "1",
+            }
+        },
+    ]
+}

@@ -1,0 +1,35 @@
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+defaults:
+  - dataset@ds_train: gaussian2spiral
+  - dataset@ds_val: gaussian
+  - dataset@ds_test: gaussian
+  - trainer: flowmatching
+  - optimizer: adamw
+  - scheduler: cosineannealing
+  - model: velocitynet
+  - _self_
+  - hydra_defaults
+
+n_training_samples: ${eval:2**16}
+
+ds_val:
+  length: 512
+
+ds_test:
+  length: 1024
+  seed: 1
+
+optimizer:
+  lr: 0.003
+
+batch_size: 64
+compile: true
+n_accum_steps: 1
+n_epochs: 20
+n_workers: -1
+name: flowmatching
+patience: -1
+seed: 0
+watched_metric: "loss"
