@@ -8,6 +8,7 @@ repos:
         name: license_header
         entry: .pre-commit-scripts/license_header.sh
         language: script
+        files: \.(py|sh|yaml|yml)
   - repo: local
     hooks:
       - id: exported_symbols
