@@ -6,6 +6,7 @@ import os
 
 import torch
 from torch import Tensor
+from torch.nn.modules.utils import _pair, _quadruple, _single, _triple
 
 
 def initialize_torch():
@@ -30,3 +31,10 @@ def are_broadcastable(shape1, shape2):
         if a != 1 and b != 1 and a != b:
             return False
     return True
+
+
+"""Helper functions to convert element to tuples"""
+to_single = _single
+to_pair = _pair
+to_triple = _triple
+to_quadruple = _quadruple
