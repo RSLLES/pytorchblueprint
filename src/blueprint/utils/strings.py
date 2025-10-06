@@ -4,42 +4,51 @@
 """Utility functions for formatting mutliple objects to strings."""
 
 import re
+import warnings
 
 import numpy as np
 import torch
+from sigfig import round
 from torch import Tensor
 
 
 def format_metrics(metrics: dict) -> str:
     """Format metrics for loging in the console."""
-    return "; ".join(f"{name}: {format_numeric(x)}" for name, x in metrics.items())
+    return "; ".join(f"{name}:{format_object(x)}" for name, x in metrics.items())
 
 
-def format_numeric(x: Tensor | np.ndarray | float | int, n_digits: int = 3) -> str:
-    """Format all sorts of numeric object with given significant digits."""
+def format_object(x: any) -> str:
+    """Format all sorts of objects to strings."""
     if isinstance(x, np.ndarray):
         x = torch.from_numpy(x)
     if isinstance(x, Tensor):
         if x.nelement() > 1:
-            strings = [format_numeric(e, n_digits=n_digits) for e in x]
+            strings = [format_object(e) for e in x]
             return "[" + ",".join(strings) + "]"
         x = x.item()
-    if isinstance(x, int):
-        x = float(x)
-    if isinstance(x, float):
-        return format_float(x, n_digits=n_digits)
-    return str(x)  # other types are printed as they are...
+    if isinstance(x, float) or isinstance(x, int):
+        return format_number(x)
+    return f" {x}"  # other types are printed as they are...
 
 
-def format_float(value: float, n_digits: int = 3) -> str:
-    """Format a float with given significant digits."""
-    size = n_digits + 5  # dot, e, +-, 2 digits in mantissa
-    # value = f"{value:{n_digits}g}"
-    # return value
-    # if len(value) > n_digits:
-    #     raise NotImplementedError()
-    # if len(value) < n_digits
-    return f"{value:>{size}.{n_digits}g}"
+def format_number(x: float | int, n_digits: int = 3) -> str:
+    """Format a number with a given number os significant digits."""
+    max_characters = n_digits + 5  # ., e, +-, 1 digit in mantissa
+    with warnings.catch_warnings():
+        # sigfig warns when x has less than n_digits
+        warnings.filterwarnings("ignore", category=UserWarning)
+        if isinstance(x, float):
+            s = round(x, sigfigs=n_digits, type=str)
+        else:
+            s = str(x)
+        s = (
+            round(x, sigfigs=n_digits, type=str, notation="sci")
+            if len(s) >= max_characters
+            else s
+        )
+    if s[0] != "-":
+        s = f" {s}"
+    return s
 
 
 def format_string(s: str) -> str:

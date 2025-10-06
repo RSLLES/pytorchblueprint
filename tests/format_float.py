@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from blueprint.utils.strings import format_float
+from blueprint.utils.strings import format_number
 
 
 def test_format_float():
@@ -17,4 +17,4 @@ def test_format_float():
         "8.85e+11": 8.85e11,
     }
     for y, x in tests.items():
-        assert y == format_float(x)
+        assert y == format_number(x)
