@@ -1,48 +1,50 @@
-# Pytorch project blueprint
+# PyTorch Project Blueprint
 
-This repository contains a blueprint of a pytorch project that I use to backbone all my projects.
-The goal is to propose a minimalistic, easy to understand code while being efficient and flexible.
+This repository contains a blueprint that I use as the foundation for all my PyTorch projects.  
+The goal is to provide a minimal, easy‑to‑understand code base that remains efficient and flexible.
 
 ## Deploy
 
-Clone the project and run the `deploy.sh` script.
-It will rename your project and self-delete, after what you are good to go.
+Clone the repository and run the `deploy.sh` script.  
+The script will rename the project and delete itself; after it finishes you are ready to go.
 
 ## Dependencies
 
-My projects rely on those mandatory libraries:
-- pytorch: basic machine learning framework, with GPU support and autograd.
-- hydra: elegantly manage dependencies in a flexible way
-- fabric: flexible and efficient way of managing multi GPU settings
-- pytest: to perform your unittest
-- matplotlib : to plot results
-- pre-commiut: to add some pre commit hooks to format the code
+My projects rely on the following libraries:
+- **fabric** – A flexible and efficient way to manage multi‑GPU settings.  
+- **hydra** – Elegantly manages dependencies in a flexible way.  
+- **matplotlib** – For visualizing results.  
+- **pandas** – For processing data frames.  
+- **pre‑commit** – Adds pre‑commit hooks for code formatting.  
+- **pytest** – To run unit tests.  
+- **scipy** – Contains convenient algorithms that are useful.  
+- **setuptools** – For building the project.  
+- **sigfig** – For accurate metric plotting.  
+- **tensorboard** – For plotting training curves.
+- **torch** – Basic machine‑learning framework with GPU support and autograd.  
+- **torchmetrics** – Convenient metric wrappers (especially for multiple GPUs).  
 
-## Architecture
+## Project Structure
 
-- scripts: contains entry points scripts, like training, validation, inference.
-- data: contains the data used in datasets (here, empty)
-- outputs: contains training runs, with both logs and checkpoints
-- configs: contains hydra config files
-- tests: contains unit test for different parts of your projects that are important
-- src: contains the core of your project.
+```
+scripts/   – Entry‑point scripts (training, validation, inference, …)
+data/      – Raw data used in datasets (currently empty)
+outputs/   – Training runs, logs, and checkpoints
+configs/   – Hydra configuration files
+tests/     – Unit tests for critical parts of the project
+src/       – Core of the project
+```
 
-Inside `src` you get a pretty classic architecture.
+Inside `src` you’ll find a classic architecture:
 
-The utils directory should contains very minimalist function all gather in a easy to understand filename.
-It's better to give those files a good name so you can easily find it while searching for files in your project, than if they were called "utils.py" in their respective directory.
+```
+datasets/  – Custom dataset classes
+engine/    – Training and validation loops
+losses/    – Loss functions
+metrics/   – Additional metrics
+models/    – Model definitions
+trainers/  – Training‑step logic
+utils/     – Small, self‑contained helper functions
+```
 
-## Code convention
-- functionnal when possible: it ease unittest. But I do not exclude OOP: avoiding it will make Pytorch very acward and it can help to encapsulated informations.
-- datasets return dictionnaries. This helps with dataset that can retrieve variable numbers of elements.
-- random should always be reproductible: uses generator with seeds
-- class name ar CamelCase (can be long), function name use snake_case (tends to be short), variable are onlinecase (very short). 
-- clean typing helps provide additionnal information. Docstring are keep as short as possible.
-- formatting: imports are sorted with ruff
-- linting and formatting with ruff / static check with ty
-
-### Comments
-Comments are minimalistic and follows common guidelines, see https://google.github.io/styleguide/cppguide.html#Comments
-
-### Format
-Pre-commits hooks ensure formating (with ruff) and license headers.
+The `utils` directory should contain very minimal functions, each saved in a descriptively named file.  
