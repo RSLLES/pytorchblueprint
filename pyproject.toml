@@ -30,3 +30,11 @@ package-dir = {"" = "src"}
 [tool.ruff.lint]
 select = ["D", "I", "W", "E", "F"]
 ignore = ["D100", "D104", "D105", "D107", "D203", "D213"]
+
+[tool.uv.sources]
+torch = [{ index = "pytorch_index" }]
+
+[[tool.uv.index]]
+name = "pytorch_index"
+url = "https://download.pytorch.org/whl/cu129"
+explicit = true
