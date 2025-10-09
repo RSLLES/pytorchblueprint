@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""Utility decorator to detect OOM and restart training with a reduced batch size."""
+
 from functools import wraps
 
 import torch
@@ -29,21 +31,21 @@ def handle_oom(cfg_attr_name="cfg"):
                 except RuntimeError as e:
                     oom = "out of memory" in str(e)
                     oom = oom or "OOM" in str(e)
-                    if oom:
-                        if cfg.batch_size > 1:
-                            cfg.batch_size = max(1, cfg.batch_size // 2)
-                            cfg.n_accum_steps = 2 * cfg.n_accum_steps
-                            print(
-                                f"OOM encountered. Retry with batch_size={cfg.batch_size} and n_accum_steps={cfg.n_accum_steps}."
-                            )
-                            torch.cuda.empty_cache()
-                        else:
-                            print(
-                                "OOM encountered. Batch size is already 1. Cannot reduce further."
-                            )
-                            raise
-                    else:
+                    if not oom:
                         raise
+                    if cfg.batch_size == 1:
+                        print(
+                            "OOM encountered. Batch size is already 1. "
+                            "Cannot reduce further."
+                        )
+                        raise
+                    cfg.batch_size = max(1, cfg.batch_size // 2)
+                    cfg.n_accum_steps = 2 * cfg.n_accum_steps
+                    print(
+                        f"OOM encountered. Retry with batch_size={cfg.batch_size} "
+                        f"and n_accum_steps={cfg.n_accum_steps}."
+                    )
+                    torch.cuda.empty_cache()
 
         return wrapper
 

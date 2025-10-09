@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Utility functions for formatting mutliple objects to strings."""
+"""Utility functions for formatting objects to strings."""
 
 import re
 import warnings
@@ -13,7 +13,7 @@ from torch import Tensor
 
 
 def format_metrics(metrics: dict) -> str:
-    """Format metrics for loging in the console."""
+    """Format metrics in a text-logging format."""
     return "; ".join(f"{name}:{format_object(x)}" for name, x in metrics.items())
 
 

@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""Flowmatching training step."""
+
 import torch
 from torch import nn
 
@@ -8,7 +10,7 @@ from blueprint.utils import random
 
 
 class FlowMatchingTrainer(nn.Module):
-    """Train a model with flow-matching."""
+    """Train a model with flowmatching."""
 
     def __init__(self, model: nn.Module, seed: int):
         super().__init__()
