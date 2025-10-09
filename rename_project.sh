@@ -85,3 +85,6 @@ substitute "tests/" "*.py"
 
 echo "Updating 'pyproject.toml' ..."
 substitute "pyproject.toml"
+
+echo "Updating yaml files under 'configs/' ..."
+substitute "configs/" "*.yaml"
