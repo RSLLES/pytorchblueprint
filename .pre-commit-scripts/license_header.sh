@@ -26,7 +26,7 @@ prepend_py() {
 	fi
 	FILE_HEADER=$(head -3 "$1")
 	if safe_are_different "$FILE_HEADER" "$HEADER"; then
-		echo "Editing $1"
+		echo "Editing $1 ..."
 		ed -s "$1" <<EOF
 1i
 $HEADER
@@ -51,7 +51,7 @@ prepend_sh() {
 	fi
 	FILE_HEADER=$(sed -n '2,4p' "$1")
 	if safe_are_different "$FILE_HEADER" "$HEADER"; then
-		echo "Editing $1"
+		echo "Editing $1 ..."
 		ed -s "$1" <<EOF
 2i
 $HEADER
