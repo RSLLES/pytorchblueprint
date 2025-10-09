@@ -3,7 +3,7 @@
 
 defaults:
   - dataset@ds_train: gaussian2spiral
-  - dataset@ds_val: gaussian
+  - dataset@ds_val: gaussian2spiral
   - dataset@ds_test: gaussian
   - trainer: flowmatching
   - optimizer: adamw
@@ -15,11 +15,16 @@ defaults:
 n_training_samples: ${eval:2**16}
 
 ds_val:
-  length: 512
+  sourcedist:
+    length: 512
+    seed: 1
+  targetdist:
+    length: 512
+    seed: 1
 
 ds_test:
   length: 1024
-  seed: 1
+  seed: 2
 
 optimizer:
   lr: 0.003

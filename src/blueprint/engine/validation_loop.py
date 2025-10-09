@@ -9,29 +9,35 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from blueprint.metrics import EarthMoverDistance
+
 
 @torch.no_grad()
-def validation_loop(
-    fabric: Fabric, dl: DataLoader, model: nn.Module, desc: str = "validation"
-):
-    source, target = torchmetrics.CatMetric(), torchmetrics.CatMetric()
+def validation_loop(fabric: Fabric, dl: DataLoader, model: nn.Module):
+    source, dest = torchmetrics.CatMetric(), torchmetrics.CatMetric()
+    distance = EarthMoverDistance()
     model.eval()
-    for batch in tqdm(dl, leave=False, desc=desc, disable=not fabric.is_global_zero):
-        x0 = batch
-        x1 = model(x0)
-        source.update(x0)
-        target.update(x1)
+    for batch in tqdm(dl, leave=False, desc="val", disable=not fabric.is_global_zero):
+        x_source = batch["sourcedist"]
+        x_target = batch["targetdist"]
+        x_pred = model(x_source)
+        source.update(x_source)
+        dest.update(x_pred)
+        distance.update(x_pred, x_target)
 
     x0 = source.compute().cpu().numpy()
-    x1 = target.compute().cpu().numpy()
+    x1 = dest.compute().cpu().numpy()
+    emd = distance.compute()
 
-    plt.clf()
-    fig, axs = plt.subplots(1, 2, figsize=(8, 4))
-    axs[0].scatter(x0[:, 0], x0[:, 1], color="blue", alpha=0.5)
-    axs[0].set_title("Source")
-    axs[0].set_aspect("equal")
-    axs[1].scatter(x1[:, 0], x1[:, 1], color="orange", alpha=0.5)
-    axs[1].set_title("Target")
-    axs[1].set_aspect("equal")
-    plt.tight_layout()
-    return {"fig": fig}
+    fig = None
+    if fabric.is_global_zero:
+        plt.clf()
+        fig, axs = plt.subplots(1, 2, figsize=(8, 4))
+        axs[0].scatter(x0[:, 0], x0[:, 1], color="blue", alpha=0.5)
+        axs[0].set_title("Source")
+        axs[0].set_aspect("equal")
+        axs[1].scatter(x1[:, 0], x1[:, 1], color="orange", alpha=0.5)
+        axs[1].set_title("Target")
+        axs[1].set_aspect("equal")
+        fig.tight_layout()
+    return {"earth_mover_dist": emd, "fig": fig}
