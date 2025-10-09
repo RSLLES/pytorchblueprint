@@ -1,12 +1,12 @@
 # PyTorch Project Blueprint
 
-This repository contains a blueprint that I use as the foundation for all my PyTorch projects.  
+This repository contains a blueprint that I use as the foundation for all my PyTorch projects.
 The goal is to provide a minimal, easy‑to‑understand code base that remains efficient and flexible.
 
 ## Deploy
 
-Clone the repository and run the `deploy.sh` script.  
-The script will rename the project and delete itself; after it finishes you are ready to go.
+Clone the repository and run the `rename_project.sh` script.
+The script will rename the project; after it finishes you are ready to go.
 
 ## Dependencies
 
