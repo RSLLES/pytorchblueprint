@@ -13,8 +13,9 @@ HEADER=$(
 EOF
 )
 
-# Compare two (multi-lines) strings, returns true if they are different
-are_different() {
+# Compare two strings, returns true if both a are non-empty and different
+safe_are_different() {
+	[[ -z "$1" || -z "$2" ]] && return 1
 	! diff <(echo "$1") <(echo "$2") >/dev/null
 }
 
@@ -23,9 +24,9 @@ prepend_py() {
 	if [[ "$(basename "$1")" == "__init__.py" ]]; then
 		return
 	fi
-
 	FILE_HEADER=$(head -3 "$1")
-	if are_different "$FILE_HEADER" "$HEADER"; then
+	if safe_are_different "$FILE_HEADER" "$HEADER"; then
+		echo "Editing $1"
 		ed -s "$1" <<EOF
 1i
 $HEADER
@@ -49,7 +50,8 @@ prepend_sh() {
 		exit 1
 	fi
 	FILE_HEADER=$(sed -n '2,4p' "$1")
-	if are_different "$FILE_HEADER" "$HEADER"; then
+	if safe_are_different "$FILE_HEADER" "$HEADER"; then
+		echo "Editing $1"
 		ed -s "$1" <<EOF
 2i
 $HEADER
