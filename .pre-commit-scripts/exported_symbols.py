@@ -32,9 +32,7 @@ def create_all_node(symbols: list[str]) -> ast.Assign:
     """Build an __all__ node from a symbol list."""
     node = ast.Assign(
         targets=[ast.Name(id="__all__", ctx=ast.Store())],
-        value=ast.List(
-            elts=[ast.Constant(value=s) for s in sorted(symbols)], ctx=ast.Load()
-        ),
+        value=ast.List(elts=[ast.Constant(value=s) for s in symbols], ctx=ast.Load()),
     )
     return node
 
