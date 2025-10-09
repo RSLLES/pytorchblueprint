@@ -74,6 +74,9 @@ fi
 echo "Renaming 'src/${oldname}' to 'src/${name}' ..."
 mv "src/${oldname}" "src/${name}"
 
+echo "Updating python files under 'scripts/${name}' ..."
+substitute "scripts/${name}" "*.py"
+
 echo "Updating python files under 'src/${name}' ..."
 substitute "src/${name}" "*.py"
 
