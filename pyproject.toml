@@ -29,4 +29,4 @@ package-dir = {"" = "src"}
 
 [tool.ruff.lint]
 select = ["D", "I", "W", "E", "F"]
-ignore = ["D100", "D104", "D105", "D107"]
+ignore = ["D100", "D104", "D105", "D107", "D203", "D213"]

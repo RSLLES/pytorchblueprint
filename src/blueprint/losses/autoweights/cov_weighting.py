@@ -41,7 +41,7 @@ class CoVWeighting(nn.Module):
             return torch.full_like(losses, 1 / self.n_losses)
 
         L = losses
-        l = losses / self.mu_L.clamp_min(self.eps)
+        l = losses / self.mu_L.clamp_min(self.eps)  # noqa: E741
 
         if self.t < self.t_lim:
             self.t += 1.0
