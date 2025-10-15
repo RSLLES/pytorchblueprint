@@ -21,7 +21,7 @@ class SplitDataset(torch.utils.data.Subset):
             indices = range(split_idx, len(ds))
         else:
             raise ValueError("direction must be 'forward' or 'backward'")
-        self.__init__(ds, indices=indices)
+        super().__init__(ds, indices=indices)
 
     def increment_seed(self):
         """Advance internal seed."""
