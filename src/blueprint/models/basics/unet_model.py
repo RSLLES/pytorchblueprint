@@ -60,8 +60,8 @@ class UNet(nn.Module):
             X.append(down(X[-1]))
 
         x = X.pop(-1)
-        for up, x_skipco in zip(self.ups, X[::-1]):
-            x = up(x, x_skipco)
+        for up, x_skip in zip(self.ups, X[::-1]):
+            x = up(x, x_skip)
 
         x = self.head(x)
         return x
