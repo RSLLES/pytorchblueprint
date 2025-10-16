@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Utilities for logging; writting and path handling."""
+"""Utilities for logging; writing and path handling."""
 
 import os
 import re
