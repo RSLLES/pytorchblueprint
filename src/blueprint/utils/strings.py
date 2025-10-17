@@ -5,6 +5,7 @@
 
 import re
 import warnings
+from math import isnan
 
 import numpy as np
 import torch
@@ -37,7 +38,7 @@ def format_number(x: float | int, n_digits: int = 3) -> str:
     with warnings.catch_warnings():
         # sigfig warns when x has less than n_digits
         warnings.filterwarnings("ignore", category=UserWarning)
-        if isinstance(x, float):
+        if isinstance(x, float) and not isnan(x):
             s = round(x, sigfigs=n_digits, type=str)
         else:
             s = str(x)
