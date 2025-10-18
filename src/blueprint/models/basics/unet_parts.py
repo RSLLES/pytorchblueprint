@@ -3,7 +3,7 @@
 
 """U-Net parts.
 
-Modified from https://github.com/milesial/Pytorch-UNet/tree/master .
+Inspired by https://github.com/milesial/Pytorch-UNet/tree/master .
 """
 
 import torch
@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 
 class DoubleConv(nn.Module):
-    """Block for Unet, with less activations and normalization."""
+    """Basic block for U-Nets."""
 
     def __init__(
         self,
@@ -26,7 +26,6 @@ class DoubleConv(nn.Module):
         super().__init__()
         mid_channels = out_channels if mid_channels is None else mid_channels
         self.double_conv = nn.Sequential(
-            norm_layer(in_channels),
             nn.Conv2d(
                 in_channels,
                 mid_channels,
@@ -34,14 +33,17 @@ class DoubleConv(nn.Module):
                 padding="same",
                 bias=False,
             ),
+            norm_layer(mid_channels),
             act_layer(inplace=True),
             nn.Conv2d(
                 mid_channels,
                 out_channels,
                 kernel_size=kernel_size,
                 padding="same",
-                bias=True,
+                bias=False,
             ),
+            norm_layer(out_channels),
+            act_layer(inplace=True),
         )
 
     def forward(self, x):  # noqa: D102
@@ -57,7 +59,7 @@ class Down(nn.Module):
         out_channels: int,
         kernel_size: int = 3,
         norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.SiLU,
+        act_layer: nn.Module = nn.ReLU,
     ):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
@@ -84,7 +86,7 @@ class Up(nn.Module):
         out_channels: int,
         kernel_size: int = 3,
         norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.SiLU,
+        act_layer: nn.Module = nn.ReLU,
     ):
         super().__init__()
         self.up = nn.ConvTranspose2d(
@@ -111,7 +113,7 @@ class OutConv(nn.Module):
     """1x1 output convolution."""
 
     def __init__(self, in_channels: int, out_channels: int):
-        super(OutConv, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):  # noqa: D102

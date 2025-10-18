@@ -12,7 +12,7 @@ from .unet_parts import DoubleConv, Down, OutConv, Up
 
 
 class UNet(nn.Module):
-    """UNet model."""
+    """U-Net model."""
 
     def __init__(
         self,
