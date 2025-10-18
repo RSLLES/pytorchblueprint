@@ -4,7 +4,7 @@
 defaults:
   - dataset@ds_train: gaussian2spiral
   - dataset@ds_val: gaussian2spiral
-  - dataset@ds_test: gaussian
+  - dataset@ds_test: gaussian2spiral
   - trainer: flowmatching
   - optimizer: adamw
   - scheduler: cosineannealing
@@ -23,8 +23,12 @@ ds_val:
     seed: 1
 
 ds_test:
-  length: 1024
-  seed: 2
+  sourcedist:
+    length: 1024
+    seed: 2
+  targetdist:
+    length: 1024
+    seed: 2
 
 optimizer:
   lr: 0.003

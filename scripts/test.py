@@ -6,7 +6,8 @@ import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from blueprint import engine, utils
+from blueprint import utils
+from blueprint.engine.epoch import validate_one_epoch
 
 
 @hydra.main(version_base=None, config_path="../configs")
@@ -35,37 +36,17 @@ def eval(cfg: DictConfig):
     else:
         if fabric.is_global_zero:
             print("Warning: no weights loaded.")
-    model_needs_calib = hasattr(model, "apply_thresholds")
 
     # data
     ds_test = instantiate(cfg.ds_test)
     dl_test = utils.dataloader.build_dl_from_config(fabric=fabric, cfg=cfg, ds=ds_test)
-    if model_needs_calib:
-        ds_calib = instantiate(cfg.ds_calib)
-        dl_calib = utils.dataloader.build_dl_from_config(
-            fabric=fabric, cfg=cfg, ds=ds_calib
-        )
 
     # acceleration
     model = fabric.setup_module(model)
-    if model_needs_calib:
-        model.mark_forward_method("apply_thresholds")
-        dl_calib, dl_test = fabric.setup_dataloaders(dl_calib, dl_test)
-    else:
-        dl_test = fabric.setup_dataloaders(dl_test)
-
-    # calibration
-    if model_needs_calib:
-        thresholds = engine.calibration_loop(
-            fabric=fabric,
-            model=model,
-            dl=dl_calib,
-            metric=cfg.watched_metric,
-        )
-        model.set_thresholds(thresholds)
+    dl_test = fabric.setup_dataloaders(dl_test)
 
     # evaluation
-    metrics = engine.validate_one_epoch(fabric=fabric, model=model, dl=dl_test)
+    metrics = validate_one_epoch(fabric=fabric, model=model, dl=dl_test)
 
     # log
     if fabric.is_global_zero:
