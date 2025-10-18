@@ -12,12 +12,10 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-from blueprint import utils
-
-from .epoch import train_one_epoch, validate_one_epoch
+from blueprint import engine, utils
 
 
-def train_model(
+def train(
     fabric: Fabric,
     model: nn.Module,
     training_module: nn.Module,
@@ -47,7 +45,7 @@ def train_model(
     for epoch in range(begin_epoch, n_epochs):
         # train, validate
         dl_train.dataset.increment_seed()
-        train_metrics, step = train_one_epoch(
+        train_metrics, step = engine.train_one_epoch(
             fabric=fabric,
             dl=dl_train,
             n_accum_steps=n_accum_steps,
@@ -56,7 +54,7 @@ def train_model(
             step=step,
             training_module=training_module,
         )
-        val_metrics = validate_one_epoch(fabric=fabric, model=model, dl=dl_val)
+        val_metrics = engine.validate(fabric=fabric, model=model, dl=dl_val)
         metrics = train_metrics | val_metrics
 
         # log

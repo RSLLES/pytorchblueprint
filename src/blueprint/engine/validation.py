@@ -13,7 +13,7 @@ from blueprint.metrics import EarthMoverDistance
 
 
 @torch.no_grad()
-def validate_one_epoch(fabric: Fabric, dl: DataLoader, model: nn.Module):
+def validate(fabric: Fabric, dl: DataLoader, model: nn.Module):
     """Compute validation metrics given a model for one dataset."""
     source, dest = torchmetrics.CatMetric(), torchmetrics.CatMetric()
     distance = EarthMoverDistance()

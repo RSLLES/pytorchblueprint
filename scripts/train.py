@@ -7,11 +7,10 @@ import hydra
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from blueprint import utils
-from blueprint.engine import train_model
+from blueprint import engine, utils
 
 
-@hydra.main(version_base=None, config_path="../configs")
+@hydra.main(version_base=None, config_path="../configs", config_name="flowmatching")
 @utils.oom.handle_oom()
 def train(cfg: DictConfig) -> float:
     """Train a configuration."""
@@ -84,7 +83,7 @@ def train(cfg: DictConfig) -> float:
     dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
 
     # train
-    best_metric = train_model(
+    best_metric = engine.train(
         fabric=fabric,
         opt=opt,
         scheduler=scheduler,

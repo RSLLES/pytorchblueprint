@@ -6,14 +6,13 @@ import torch
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from blueprint import utils
-from blueprint.engine.epoch import validate_one_epoch
+from blueprint import engine, utils
 
 
 @hydra.main(version_base=None, config_path="../configs")
 @torch.no_grad()
-def eval(cfg: DictConfig):
-    """Perform a validation pass for a model with loaded weights."""
+def test(cfg: DictConfig):
+    """Perform a validation pass on the test dataset."""
     utils.torch.initialize_torch()
     fabric = utils.fabric.initialize_fabric(cfg.seed)
     cfg = utils.config.initialize_config(cfg)
@@ -46,7 +45,7 @@ def eval(cfg: DictConfig):
     dl_test = fabric.setup_dataloaders(dl_test)
 
     # evaluation
-    metrics = validate_one_epoch(fabric=fabric, model=model, dl=dl_test)
+    metrics = engine.validate(fabric=fabric, model=model, dl=dl_test)
 
     # log
     if fabric.is_global_zero:
@@ -55,4 +54,4 @@ def eval(cfg: DictConfig):
 
 
 if __name__ == "__main__":
-    eval()
+    test()
