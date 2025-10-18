@@ -8,7 +8,7 @@ from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
 from blueprint import utils
-from blueprint.engine import training_engine
+from blueprint.engine import train_model
 
 
 @hydra.main(version_base=None, config_path="../configs")
@@ -84,7 +84,7 @@ def train(cfg: DictConfig) -> float:
     dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
 
     # train
-    best_metric = training_engine(
+    best_metric = train_model(
         fabric=fabric,
         opt=opt,
         scheduler=scheduler,
@@ -93,7 +93,7 @@ def train(cfg: DictConfig) -> float:
         dl_train=dl_train,
         dl_val=dl_val,
         log_dir=cfg.log_dir,
-        cfgstr=utils.config.dump_config(cfg),
+        cfg_str=utils.config.dump_config(cfg),
         begin_epoch=epoch,
         begin_step=step,
         n_epochs=cfg.n_epochs,

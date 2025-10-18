@@ -12,11 +12,12 @@ from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
-import blueprint
 from blueprint import utils
 
+from .epoch import train_one_epoch, validate_one_epoch
 
-def training_engine(
+
+def train_model(
     fabric: Fabric,
     model: nn.Module,
     training_module: nn.Module,
@@ -26,7 +27,7 @@ def training_engine(
     dl_val: DataLoader,
     watched_metric: str,
     log_dir: str,
-    cfgstr: str,
+    cfg_str: str,
     begin_epoch: int = 0,
     begin_step: int = 0,
     n_epochs: int = -1,
@@ -46,7 +47,7 @@ def training_engine(
     for epoch in range(begin_epoch, n_epochs):
         # train, validate
         dl_train.dataset.increment_seed()
-        train_metrics, step = blueprint.engine.training_loop(
+        train_metrics, step = train_one_epoch(
             fabric=fabric,
             dl=dl_train,
             n_accum_steps=n_accum_steps,
@@ -55,9 +56,7 @@ def training_engine(
             step=step,
             training_module=training_module,
         )
-        val_metrics = blueprint.engine.validation_loop(
-            fabric=fabric, model=model, dl=dl_val
-        )
+        val_metrics = validate_one_epoch(fabric=fabric, model=model, dl=dl_val)
         metrics = train_metrics | val_metrics
 
         # log
@@ -65,7 +64,7 @@ def training_engine(
             logs = {"epoch": epoch, "step": step} | metrics
             if logger is None:
                 os.makedirs(log_dir, exist_ok=True)
-                utils.logs.write_file(cfgstr, filename="config.yaml", log_dir=log_dir)
+                utils.logs.write_file(cfg_str, filename="config.yaml", log_dir=log_dir)
                 logger = SummaryWriter(log_dir)
             for key, value in logs.items():
                 if isinstance(value, Tensor) and value.nelement() > 1:

@@ -65,7 +65,7 @@ def eval(cfg: DictConfig):
         model.set_thresholds(thresholds)
 
     # evaluation
-    metrics = engine.validation_loop(fabric=fabric, model=model, dl=dl_test)
+    metrics = engine.validate_one_epoch(fabric=fabric, model=model, dl=dl_test)
 
     # log
     if fabric.is_global_zero:

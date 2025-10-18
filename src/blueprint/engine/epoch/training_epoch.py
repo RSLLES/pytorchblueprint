@@ -15,7 +15,7 @@ from blueprint.utils.profiler import MemoryProfiler
 
 
 @torch.enable_grad()
-def training_loop(
+def train_one_epoch(
     fabric: Fabric,
     dl: DataLoader,
     n_accum_steps: int,
