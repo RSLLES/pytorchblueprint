@@ -15,15 +15,15 @@ class FlowMatchingTrainer(nn.Module):
     def __init__(self, model: nn.Module, seed: int):
         super().__init__()
         self.model = model
-        self.register_buffer("seed", torch.tensor(seed))
+        self.register_buffer("seed", torch.tensor(seed, dtype=torch.int64))
 
     def forward(self, x):
         """Compute one training step loss for a batch of distributions."""
         x0 = x["sourcedist"]
         x1 = x["targetdist"]
 
+        random.derive_new_seed_(self.seed)
         gen = random.get_generator(self.seed)
-        self.seed = random.derive_new_seed(self.seed)
         t = torch.rand((x0.size(0), 1), device=x0.device, dtype=x0.dtype, generator=gen)
 
         xt = t * x1 + (1.0 - t) * x0
