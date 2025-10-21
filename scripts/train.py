@@ -2,6 +2,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
+from tempfile import TemporaryDirectory
 
 import hydra
 from hydra.utils import instantiate
@@ -66,15 +67,17 @@ def train(cfg: DictConfig) -> float:
             print(f"Weights loaded from {cfg.weights_path}")
 
     # logs
-    if "log_dir" in cfg and cfg.log_dir is not None:
-        if os.path.isdir(cfg.log_dir):
-            raise ValueError(f"log_dir '{cfg.log_dir}' exists.")
-    else:
+    if "log_dir" not in cfg:
+        log_dir = utils.logs.get_log_dir(cfg.name) if fabric.is_global_zero else None
+        cfg.log_dir = fabric.broadcast(log_dir, src=0)
+    if cfg.log_dir == "/dev/null":
         log_dir = None
         if fabric.is_global_zero:
-            log_dir = utils.logs.get_log_dir(cfg.name)
-        log_dir = fabric.broadcast(log_dir, src=0)
-        cfg.log_dir = log_dir
+            tempdir = TemporaryDirectory()
+            log_dir = tempdir.name
+        cfg.log_dir = fabric.broadcast(log_dir, src=0)
+    elif os.path.exists(cfg.log_dir):
+        raise ValueError(f"log_dir '{cfg.log_dir}' exists.")
     if fabric.is_global_zero:
         print(f"Log directory is {cfg.log_dir}")
 
