@@ -11,7 +11,7 @@ from omegaconf import DictConfig, OmegaConf
 from blueprint import engine, utils
 
 
-@hydra.main(version_base=None, config_path="../configs", config_name="flowmatching")
+@hydra.main(version_base=None, config_path="../configs")
 @utils.oom.handle_oom()
 def train(cfg: DictConfig) -> float:
     """Train a configuration."""
