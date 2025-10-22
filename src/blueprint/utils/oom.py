@@ -32,13 +32,9 @@ def handle_oom(cfg_attr_name="cfg"):
                     oom = "out of memory" in str(e)
                     oom = oom or "OOM" in str(e)
                     if not oom:
-                        raise
+                        raise e
                     if cfg.batch_size == 1:
-                        print(
-                            "OOM encountered. Batch size is already 1. "
-                            "Cannot reduce further."
-                        )
-                        raise
+                        raise ValueError("Cannot reduce batch size below 1.")
                     cfg.batch_size = max(1, cfg.batch_size // 2)
                     cfg.n_accum_steps = 2 * cfg.n_accum_steps
                     print(
