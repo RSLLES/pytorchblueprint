@@ -1,4 +1,5 @@
-from .splitdataset import SplitDataset
-from .stackdataset import StackDataset
+from .extend_dataset import ExtendDataset
+from .split_dataset import SplitDataset
+from .stack_dataset import StackDataset
 
-__all__ = ["SplitDataset", "StackDataset"]
+__all__ = ["ExtendDataset", "SplitDataset", "StackDataset"]
