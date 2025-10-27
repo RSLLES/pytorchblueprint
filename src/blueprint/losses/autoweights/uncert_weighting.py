@@ -8,8 +8,8 @@ import torch.distributed as dist
 from torch import Tensor, nn
 
 
-class RegressionUncertaintyWeighting(nn.Module):
-    """Compute a weighted sum of losses based on learned uncertainties."""
+class L2UncertaintyWeighting(nn.Module):
+    """Compute a weighted sum of L2 losses with learnt uncertainties."""
 
     def __init__(self, n_losses: int, eps: float = 1e-9):
         super().__init__()
@@ -24,7 +24,7 @@ class RegressionUncertaintyWeighting(nn.Module):
     @torch.no_grad()
     def initialize(self, losses: Tensor):
         """Initialize log_sigma_ref once at the first pass."""
-        init = 0.5 * torch.log(losses.abs() + self.eps)
+        init = 0.5 * torch.log(losses + self.eps)
         if dist.is_initialized():
             dist.broadcast(init, src=0)
         self.log_sigma_ref.copy_(init)
@@ -34,7 +34,8 @@ class RegressionUncertaintyWeighting(nn.Module):
         """Return the weighted loss sum."""
         if losses.dim() > 1 or losses.numel() != self.log_sigma_ref.numel():
             raise ValueError(f"Wrong losses shape: {losses.size()}")
-
+        if (losses < 0.0).any():
+            raise ValueError("Losses are expected to be L2-losses; they can't be <= 0.")
         if not self.initialized:
             self.initialize(losses)
         log_sigma = self.log_sigma_ref * self.log_sigma_weights
