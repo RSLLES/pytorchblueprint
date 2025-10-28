@@ -70,7 +70,7 @@ def train(cfg: DictConfig) -> float:
     if "log_dir" not in cfg:
         log_dir = utils.logs.get_log_dir(cfg.name) if fabric.is_global_zero else None
         cfg.log_dir = fabric.broadcast(log_dir, src=0)
-    if cfg.log_dir == "/dev/null":
+    if cfg.log_dir == "/tmp":
         log_dir = None
         if fabric.is_global_zero:
             tempdir = TemporaryDirectory()
