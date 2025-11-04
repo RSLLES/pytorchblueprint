@@ -12,7 +12,7 @@ from blueprint import engine, utils
 @hydra.main(version_base=None, config_path="../configs")
 @torch.no_grad()
 def test(cfg: DictConfig):
-    """Perform a validation pass on the test dataset."""
+    """Perform an evaluation pass over the test dataset."""
     utils.torch.initialize_torch()
     fabric = utils.fabric.initialize_fabric(cfg.seed)
     cfg = utils.config.initialize_config(cfg)
