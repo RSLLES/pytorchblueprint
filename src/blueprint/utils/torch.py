@@ -11,9 +11,12 @@ from torch import Tensor
 from torch.nn.modules.utils import _pair, _quadruple, _single, _triple
 
 
-def initialize_torch():
-    """Set PyTorch to high matmul precision and suppress debug logs."""
-    torch.set_float32_matmul_precision("high")
+def initialize_torch(detect_anomaly: bool = False):
+    """Set PyTorch's precision, control detect_anomaly, improve logs."""
+    if detect_anomaly:
+        print("Warning: detect_anomaly is enabled.")
+    torch.autograd.set_detect_anomaly(detect_anomaly)
+    torch.set_printoptions(linewidth=160)
     torch._logging.set_logs(all=logging.WARNING)
 
 
