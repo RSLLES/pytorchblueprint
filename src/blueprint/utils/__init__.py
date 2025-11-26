@@ -4,6 +4,7 @@ from . import (
     dataloader,
     divergence,
     fabric,
+    format,
     logs,
     maths,
     model,
@@ -11,7 +12,6 @@ from . import (
     oom,
     profiler,
     random,
-    strings,
     tensorboard,
     torch,
 )
@@ -22,6 +22,7 @@ __all__ = [
     "dataloader",
     "divergence",
     "fabric",
+    "format",
     "logs",
     "maths",
     "model",
@@ -29,7 +30,6 @@ __all__ = [
     "oom",
     "profiler",
     "random",
-    "strings",
     "tensorboard",
     "torch",
 ]

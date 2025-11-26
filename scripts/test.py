@@ -49,7 +49,7 @@ def test(cfg: DictConfig):
 
     # log
     if fabric.is_global_zero:
-        print(utils.strings.format_metrics(metrics))
+        print(utils.format.format_metrics(metrics))
     return metrics
 
 

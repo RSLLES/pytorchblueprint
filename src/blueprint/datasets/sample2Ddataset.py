@@ -17,7 +17,7 @@ class Sample2DDataset(Dataset):
         super().__init__()
         self.seed = seed
         self.length = length
-        dist = blueprint.utils.strings.format_string(dist)
+        dist = blueprint.utils.format.format_string(dist)
         if dist not in self.SUPPORTED_DIST:
             raise ValueError(f"Unsupported distribution: {self.dist}")
         self.dist = dist

@@ -10,7 +10,7 @@ import torch
 from torch import Tensor
 from torch.nn.modules.utils import _pair, _quadruple, _single, _triple
 
-from .strings import format_size
+from .format import format_size
 
 
 def initialize_torch(detect_anomaly: bool = False):

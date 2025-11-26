@@ -14,7 +14,7 @@ class SplitDataset(torch.utils.data.Subset):
         if prop < 0 or prop > 1:
             raise ValueError("Propotion should be in [0, 1]")
         split_idx = int(prop * len(ds))
-        direction = utils.strings.format_string(direction)
+        direction = utils.format.format_string(direction)
         if direction == "forward":
             indices = range(0, split_idx)
         elif direction == "backward":

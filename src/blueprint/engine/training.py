@@ -71,7 +71,7 @@ def train(
                     logger.add_figure(tag=key, figure=value, global_step=step)
                 else:
                     logger.add_scalar(tag=key, scalar_value=value, global_step=step)
-            print(utils.strings.format_metrics(logs))
+            print(utils.format.format_metrics(logs))
 
         # save
         utils.checkpoint.save_training(

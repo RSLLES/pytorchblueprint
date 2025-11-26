@@ -50,7 +50,7 @@ def train_one_epoch(
                     d = opt.param_groups[0]["d"]
                 metrics["lr"] = d * scheduler.get_last_lr()[0]
                 avg_metrics.update(metrics)
-                pbar.desc = utils.strings.format_metrics({"step": step} | metrics)
+                pbar.desc = utils.format.format_metrics({"step": step} | metrics)
 
                 if not is_accumulating:
                     opt.step()

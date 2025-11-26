@@ -56,7 +56,7 @@ def multitest(cfg: DictConfig):
             print(f"Weights loaded from {weights_path}")
         run_metrics = engine.validate(fabric=fabric, model=model, dl=dl_test)
         if fabric.is_global_zero:
-            print(utils.strings.format_metrics(run_metrics))
+            print(utils.format.format_metrics(run_metrics))
         for key, value in run_metrics.items():
             if key not in metrics:
                 metrics[key] = []
@@ -66,7 +66,7 @@ def multitest(cfg: DictConfig):
     metrics.pop("wobble_corr")
     if fabric.is_global_zero:
         print("Aggregated results:")
-        print(utils.strings.format_metrics_with_uncertainties(metrics))
+        print(utils.format.format_metrics_with_uncertainties(metrics))
 
 
 if __name__ == "__main__":
