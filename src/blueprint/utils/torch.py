@@ -10,6 +10,8 @@ import torch
 from torch import Tensor
 from torch.nn.modules.utils import _pair, _quadruple, _single, _triple
 
+from .strings import format_size
+
 
 def initialize_torch(detect_anomaly: bool = False):
     """Set PyTorch's precision, control detect_anomaly, improve logs."""
@@ -36,6 +38,14 @@ def are_broadcastable(shape1, shape2):
         if a != 1 and b != 1 and a != b:
             return False
     return True
+
+
+def get_memory_size(tensor: Tensor, as_string: bool = True) -> int | str:
+    """Return the size occupied by the tensor in memory in bytes."""
+    size = tensor.element_size() * tensor.nelement()
+    if not as_string:
+        return size
+    return format_size(size)
 
 
 """Helper functions to convert element to tuples"""
