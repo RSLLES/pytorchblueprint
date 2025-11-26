@@ -7,7 +7,10 @@ import torch
 
 
 class MemoryProfiler:
-    """Profile GPU memory usage and dump a snapshot."""
+    """Profile GPU memory usage and dump a snapshot.
+
+    Snapshot can be visualized with https://docs.pytorch.org/memory_viz
+    """
 
     def __init__(self, prefix="memory", disable=False, exit_on_done=True):
         """Set up profiler with a prefix and options."""
