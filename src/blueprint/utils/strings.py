@@ -79,3 +79,15 @@ def format_string(s: str) -> str:
     s = s.lower().replace(" ", "_")
     s = re.sub(r"[^a-z0-9_]", "", s)
     return s
+
+
+def format_size(size: int, n_digits: int = 3) -> str:
+    """Format a number of bytes into a readable string with size unit (KiB, ...)."""
+    units = ["B", "KiB", "MiB", "GiB", "TiB"]
+    for unit in units:
+        if size < 1024:
+            break
+        size /= 1024
+    with warnings.catch_warnings():  # sigfig warns when x has less than n_digits
+        warnings.filterwarnings("ignore", category=UserWarning)
+        return round(size, sigfigs=n_digits, type=str) + unit
