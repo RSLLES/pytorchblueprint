@@ -17,7 +17,7 @@ def train(cfg: DictConfig) -> float:
     """Train a configuration."""
     # init
     utils.torch.initialize_torch(detect_anomaly=cfg.detect_anomaly)
-    fabric = utils.fabric.initialize_fabric(cfg.seed)
+    fabric = utils.fabric.initialize_fabric(cfg.seed, precision=cfg.precision)
     cfg = utils.config.initialize_config(cfg)
 
     cfg = utils.config.add_git_commit_hash(cfg)

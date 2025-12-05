@@ -9,6 +9,7 @@ defaults:
 # training default options
 detect_anomaly: false
 divergence_detection: true
+precision: "32-true"
 profiling: false
 
 # disable hydra logging

@@ -8,9 +8,11 @@ import contextlib
 from lightning_fabric import Fabric
 
 
-def initialize_fabric(seed: int, devices: str | int = "auto"):
+def initialize_fabric(
+    seed: int, precision: str = "32-true", devices: str | int = "auto"
+):
     """Initialize a Fabric instance with the given seed and devices."""
-    fabric = Fabric(devices=devices)
+    fabric = Fabric(devices=devices, precision=precision)
     fabric.seed_everything(seed)
     fabric.launch()
     return fabric
