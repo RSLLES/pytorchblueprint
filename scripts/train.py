@@ -16,7 +16,7 @@ from blueprint import engine, utils
 def train(cfg: DictConfig) -> float:
     """Train a configuration."""
     # init
-    utils.torch.initialize_torch()
+    utils.torch.initialize_torch(detect_anomaly=cfg.detect_anomaly)
     fabric = utils.fabric.initialize_fabric(cfg.seed)
     cfg = utils.config.initialize_config(cfg)
 

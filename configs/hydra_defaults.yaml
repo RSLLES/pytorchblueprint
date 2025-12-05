@@ -7,6 +7,7 @@ defaults:
   - override hydra/job_logging: disabled
 
 # training default options
+detect_anomaly: false
 divergence_detection: true
 profiling: false
 
