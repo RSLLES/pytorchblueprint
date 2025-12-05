@@ -102,6 +102,8 @@ def train(cfg: DictConfig) -> float:
         n_accum_steps=cfg.n_accum_steps,
         patience=cfg.patience,
         watched_metric=cfg.watched_metric,
+        enable_divergence_detection=cfg.divergence_detection,
+        enable_profiling=cfg.profiling,
     )
     return best_metric
 

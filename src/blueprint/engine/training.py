@@ -31,6 +31,8 @@ def train(
     n_epochs: int = -1,
     n_accum_steps: int = 1,
     patience: int = -1,
+    enable_divergence_detection: bool = True,
+    enable_profiling: bool = False,
 ):
     """Train a model for n epochs."""
     # init
@@ -53,6 +55,7 @@ def train(
             scheduler=scheduler,
             step=step,
             training_module=training_module,
+            enable_profiling=enable_profiling,
         )
         val_metrics = engine.validate(fabric=fabric, model=model, dl=dl_val)
         metrics = train_metrics | val_metrics
@@ -103,17 +106,18 @@ def train(
             break
 
         # divergence
-        loss_history.append(metrics["loss"])
-        if len(dl_train) != 0 and utils.divergence.detect_divergence(loss_history):
-            if fabric.is_global_zero:
-                print("Divergence detected. Reverting to previous best weights.")
-            utils.checkpoint.load_training(
-                fabric=fabric,
-                ckpt_path=path_best_ckpt,
-                optimizer=opt,
-                scheduler=scheduler,
-                training_module=training_module,
-            )
-            loss_history = []
+        if enable_divergence_detection and len(dl_train) != 0:
+            loss_history.append(metrics["loss"])
+            if utils.divergence.detect_divergence(loss_history):
+                if fabric.is_global_zero:
+                    print("Divergence detected. Reverting to previous best weights.")
+                utils.checkpoint.load_training(
+                    fabric=fabric,
+                    ckpt_path=path_best_ckpt,
+                    optimizer=opt,
+                    scheduler=scheduler,
+                    training_module=training_module,
+                )
+                loss_history = []
 
     return best_metric

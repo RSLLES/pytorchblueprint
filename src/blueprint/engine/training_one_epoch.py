@@ -23,6 +23,7 @@ def train_one_epoch(
     scheduler: LRScheduler,
     step: int,
     training_module: nn.Module,
+    enable_profiling: bool,
 ) -> tuple[dict, int]:
     """Training loop for one epoch."""
     if len(dl) == 0:
@@ -37,7 +38,7 @@ def train_one_epoch(
     n_steps = len(dl) // n_accum_steps
     n_steps += 1 if len(dl) % n_accum_steps > 0 else 0
     with tqdm(total=n_steps, leave=False, disable=not fabric.is_global_zero) as pbar:
-        with MemoryProfiler(disable=True):
+        with MemoryProfiler(disable=not enable_profiling):
             for i, batch in enumerate(dl):
                 # +1 so we start accumulating at the first step
                 is_accumulating = (i + 1) % n_accum_steps != 0

@@ -9,8 +9,8 @@ defaults:
   - optimizer: adamw
   - scheduler: cosineannealing
   - model: velocitynet
-  - _self_
   - hydra_defaults
+  - _self_
 
 n_training_samples: ${eval:2**16}
 
