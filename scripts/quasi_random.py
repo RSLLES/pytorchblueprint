@@ -42,16 +42,16 @@ def generate_quasi_random_sequence(
 
 
 def main():  # noqa: D103
+    n_digits = 3
     parameters = [
-        Parameter(20, 500, log=True),
-        Parameter(1e2, 1e4, log=True),
+        Parameter(vmin=1e-4, vmax=1e-2, log=True),  # entropy reg
     ]
 
     samples = generate_quasi_random_sequence(parameters, N=32)
 
     samples = samples.tolist()
     for i, sample in enumerate(samples):
-        sample = [str(int(e)) for e in sample]
+        sample = [round(x, sigfigs=n_digits, type=str) for x in sample]
         print(f"f {i} " + " ".join(sample))
 
 
