@@ -10,7 +10,7 @@ defaults:
 runtime:
   detect_anomaly: false
   divergence_detection: true
-  precision: "32-true"
+  precision: "32-true" # see https://lightning.ai/docs/fabric/stable/fundamentals/precision.html
   profiling: false
 
 # disable hydra logging
