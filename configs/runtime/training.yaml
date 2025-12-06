@@ -1,5 +1,11 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-_target_: torch.optim.lr_scheduler.CosineAnnealingLR
-T_max: ${runtime.total_steps}
+batch_size: 64
+compile: true
+n_accum_steps: 1
+n_epochs: 20
+n_workers: -1
+patience: -1
+seed: 0
+watched_metric: "loss"

@@ -5,6 +5,7 @@ defaults:
   - dataset@ds_train: gaussian2spiral
   - dataset@ds_val: gaussian2spiral
   - dataset@ds_test: gaussian2spiral
+  - runtime: training
   - trainer: flowmatching
   - optimizer: adamw
   - scheduler: cosineannealing
@@ -33,12 +34,5 @@ ds_test:
 optimizer:
   lr: 0.003
 
-batch_size: 64
-compile: true
-n_accum_steps: 1
-n_epochs: 20
-n_workers: -1
-name: flowmatching
-patience: -1
-seed: 0
-watched_metric: "loss"
+runtime:
+  name: flowmatching

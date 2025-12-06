@@ -3,5 +3,5 @@
 
 _target_: blueprint.datasets.Sample2DDataset
 length: ${n_training_samples}
-seed: ${seed}
+seed: ${runtime.seed}
 dist: spiral

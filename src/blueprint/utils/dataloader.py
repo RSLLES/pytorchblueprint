@@ -5,7 +5,6 @@
 
 import os
 
-from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -18,16 +17,20 @@ def interpret_n_workers(n_workers: int, world_size: int) -> int:
 
 
 def build_dl(
-    ds: Dataset, batch_size: int, n_workers: int, world_size: int
+    ds: Dataset,
+    batch_size: int,
+    n_workers: int,
+    shuffle: bool,
+    world_size: int,
 ) -> DataLoader:
-    """Return a DataLoader using the dataset's collate function."""
+    """Build a DataLoader using the dataset's collate function."""
     n_workers = interpret_n_workers(n_workers, world_size=world_size)
     dl = DataLoader(
         ds,
         collate_fn=ds.collate_fn,
         batch_size=min(batch_size, max(len(ds), 1)),
         num_workers=n_workers,
-        shuffle=False,
+        shuffle=shuffle,
         pin_memory=True,
         drop_last=False,
         # incompatible with utils.training.handle_oom():  OSError: Too many open files
@@ -35,13 +38,3 @@ def build_dl(
         persistent_workers=False,
     )
     return dl
-
-
-def build_dl_from_config(fabric, ds: Dataset, cfg: DictConfig) -> DataLoader:
-    """Create a DataLoader based on a fabric object and configuration."""
-    return build_dl(
-        ds=ds,
-        batch_size=cfg.batch_size,
-        n_workers=cfg.n_workers,
-        world_size=fabric.world_size,
-    )

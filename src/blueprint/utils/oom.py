@@ -25,6 +25,7 @@ def handle_oom(cfg_attr_name="cfg"):
             if cfg is None:
                 raise ValueError("DictConfig not found in arguments.")
 
+            cfgr = cfg.runtime
             while True:
                 try:
                     return func(*args, **kwargs)
@@ -32,14 +33,18 @@ def handle_oom(cfg_attr_name="cfg"):
                     oom = "out of memory" in str(e)
                     oom = oom or "OOM" in str(e)
                     if not oom:
-                        raise e
-                    if cfg.batch_size == 1:
-                        raise ValueError("Cannot reduce batch size below 1.")
-                    cfg.batch_size = max(1, cfg.batch_size // 2)
-                    cfg.n_accum_steps = 2 * cfg.n_accum_steps
+                        raise
+                    if cfgr.batch_size == 1:
+                        print(
+                            "OOM encountered. Batch size is already 1. "
+                            "Cannot reduce further."
+                        )
+                        raise
+                    cfgr.batch_size = max(1, cfgr.batch_size // 2)
+                    cfgr.n_accum_steps = 2 * cfgr.n_accum_steps
                     print(
-                        f"OOM encountered. Retry with batch_size={cfg.batch_size} "
-                        f"and n_accum_steps={cfg.n_accum_steps}."
+                        f"OOM encountered. Retry with batch_size={cfgr.batch_size} "
+                        f"and n_accum_steps={cfgr.n_accum_steps}."
                     )
                     torch.cuda.empty_cache()
 

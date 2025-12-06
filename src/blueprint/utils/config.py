@@ -16,31 +16,42 @@ def initialize_config(cfg: DictConfig):
         OmegaConf.register_new_resolver("pow2", lambda n: 2 ** int(n))
     if not OmegaConf.has_resolver("eval"):
         OmegaConf.register_new_resolver("eval", eval)
-    cfg.git_commit_hash = get_head_commit_hash()
+    cfg.runtime.git_commit_hash = get_head_commit_hash()
     return cfg
 
 
 def add_git_commit_hash(cfg: DictConfig):
     """Add git commit hash to configuration."""
-    cfg.git_commit_hash = get_head_commit_hash()
+    cfg.runtime.git_commit_hash = get_head_commit_hash()
     return cfg
 
 
 def add_eff_batch_size(cfg: DictConfig, world_size: int):
     """Compute effective batch size and assign to configuration."""
-    cfg.eff_batch_size = cfg.batch_size * world_size * cfg.n_accum_steps
+    cfg.runtime.eff_batch_size = (
+        cfg.runtime.batch_size * world_size * cfg.runtime.n_accum_steps
+    )
     return cfg
 
 
 def add_total_steps(cfg: DictConfig, step_per_epoch: int):
     """Compute total training steps and assign to configuration."""
-    if cfg.n_epochs > 0:
-        cfg.total_steps = cfg.n_epochs * step_per_epoch // cfg.eff_batch_size
+    if cfg.runtime.n_epochs > 0:
+        cfg.runtime.total_steps = (
+            cfg.runtime.n_epochs * step_per_epoch // cfg.runtime.eff_batch_size
+        )
     else:
-        cfg.total_steps = -1
+        cfg.runtime.total_steps = -1
     return cfg
 
 
 def dump_config(cfg: DictConfig) -> str:
     """Dump configuration to YAML string."""
     return yaml.dump(OmegaConf.to_container(cfg), default_flow_style=False)
+
+
+def load_config(filepath: str):
+    """Load a config from a yaml file."""
+    with filepath.open() as f:
+        cfg_dict = yaml.safe_load(f)
+    return OmegaConf.create(cfg_dict)
