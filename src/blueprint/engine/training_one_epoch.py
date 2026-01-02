@@ -60,12 +60,10 @@ def train_one_epoch(
                     step += 1
                     pbar.update(1)
 
-        # n_accum_steps may not divide exactly the dataset
+        # n_accum_steps may not divide exactly the dataset;
+        # we discard leftover batches to prevent a noisy update
         if is_accumulating:
-            opt.step()
             opt.zero_grad()
-            step += 1
-            pbar.update(1)
 
     avg_metrics = avg_metrics.compute()
     return avg_metrics, step
