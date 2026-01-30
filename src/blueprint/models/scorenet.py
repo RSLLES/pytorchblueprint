@@ -4,29 +4,7 @@
 import torch
 from torch import Tensor, nn
 
-
-class GaussianFourierProjection(nn.Module):
-    """Project data to sin and cosine embeddings with normaly sampled weights."""
-
-    def __init__(self, input_dim, embed_dim, scale=1.0):
-        super().__init__()
-        self.register_buffer("B", torch.randn(input_dim, embed_dim // 2) * scale)
-
-    def forward(self, x):  # noqa: D102
-        x_proj = (2 * torch.pi * x) @ self.B
-        return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
-
-
-class ResnetBlock(nn.Module):
-    """ResNet block with SiLU activation."""
-
-    def __init__(self, dim):
-        super().__init__()
-        self.block = nn.Sequential(nn.Linear(dim, dim), nn.SiLU(), nn.Linear(dim, dim))
-        self.act = nn.SiLU()
-
-    def forward(self, x):  # noqa: D102
-        return self.act(x + self.block(x))
+from .basics import FourierEmbeddings
 
 
 def langevin_step(score_fn: callable, x: Tensor, step_size: float) -> Tensor:
@@ -46,6 +24,18 @@ def langevin_dynamics(
     return x
 
 
+class ResnetBlock(nn.Module):
+    """ResNet block with SiLU activation."""
+
+    def __init__(self, dim):
+        super().__init__()
+        self.block = nn.Sequential(nn.Linear(dim, dim), nn.SiLU(), nn.Linear(dim, dim))
+        self.act = nn.SiLU()
+
+    def forward(self, x):  # noqa: D102
+        return self.act(x + self.block(x))
+
+
 class ScoreNet(nn.Module):
     """Toy model that learns a input_dim-D score function."""
 
@@ -58,7 +48,7 @@ class ScoreNet(nn.Module):
         embed_scale: float = 1.0,
     ):
         super().__init__()
-        self.embed = GaussianFourierProjection(input_dim, inner_dim, scale=embed_scale)
+        self.embed = FourierEmbeddings(input_dim, inner_dim, scale=embed_scale)
         self.net = nn.Sequential(
             nn.Linear(inner_dim, inner_dim),
             nn.SiLU(),
