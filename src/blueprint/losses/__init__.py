@@ -2,7 +2,8 @@
 # LICENSE file in the root directory of this source tree.
 
 from . import autoweights
+from .hyvarinen import HyvarinenLoss
 from .loor import LOORLossFunc
 from .mmd import MMDLinearLossFunc
 
-__all__ = ["autoweights", "LOORLossFunc", "MMDLinearLossFunc"]
+__all__ = ["autoweights", "HyvarinenLoss", "LOORLossFunc", "MMDLinearLossFunc"]

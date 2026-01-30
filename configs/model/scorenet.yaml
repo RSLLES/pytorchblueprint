@@ -1,7 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .scorenet import ScoreNet
-from .velocitynet import VelocityNet
-
-__all__ = ["ScoreNet", "VelocityNet"]
+_target_: blueprint.models.ScoreNet
+input_dim: 2
+inner_dim: 64
+n_steps: 100
+step_size: 1e-3
