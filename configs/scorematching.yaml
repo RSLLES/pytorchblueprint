@@ -17,10 +17,10 @@ n_training_samples: ${eval:2**16}
 
 ds_val:
   sourcedist:
-    length: 512
+    length: 1024
     seed: 1
   targetdist:
-    length: 512
+    length: 1024
     seed: 1
 
 ds_test:
