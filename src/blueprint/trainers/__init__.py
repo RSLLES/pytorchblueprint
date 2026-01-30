@@ -2,6 +2,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from .flowmatchingtrainer import FlowMatchingTrainer
+from .momentmatching import MomentMatchingTrainer
 from .scorematching import ScoreMatchingTrainer
 
-__all__ = ["FlowMatchingTrainer", "ScoreMatchingTrainer"]
+__all__ = ["FlowMatchingTrainer", "MomentMatchingTrainer", "ScoreMatchingTrainer"]
