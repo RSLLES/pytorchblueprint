@@ -3,7 +3,7 @@
 
 """Implementation of Maximum Mean Discrepancy (MMD) as a Pytorch loss.
 
-See [1] for details about (linear) MMD.
+See [1] for details about MMD.
 Code based on https://github.com/yiftachbeer/mmd_loss_pytorch/tree/master
 
 [1] Gretton, A., Borgwardt, K. M., Rasch, M. J., Schölkopf, B., & Smola, A. (2012).
@@ -17,25 +17,36 @@ from torch import Tensor, nn
 from blueprint.utils.torch import reduce
 
 
-class RBF(nn.Module):
-    """Radial Base function kernel."""
+class ExponentialKernel(nn.Module):
+    """Kernel that includes both Laplace Kernel (p=1) and Gaussian Kernel (p=2)."""
 
-    def __init__(self, n_kernels=5, mul_factor=2.0, bandwidth=None):
+    bandwidth_multipliers: Tensor
+
+    def __init__(
+        self,
+        p: float | int,
+        n_kernels: int = 5,
+        mul_factor: float = 2.0,
+        bandwidth: float | None = None,
+    ):
         super().__init__()
+        self.p = p
         bandwidth_multipliers = mul_factor ** (torch.arange(n_kernels) - n_kernels // 2)
         self.register_buffer("bandwidth_multipliers", bandwidth_multipliers)
         self.bandwidth = bandwidth
 
-    def get_bandwidth(self, L2_distances):
-        """Return the median of the L2 distances matrix by default."""
+    def get_bandwidth(self, dists: Tensor) -> float:
+        """Return the median of the distances matrix by default."""
         if self.bandwidth is not None:
             return self.bandwidth
-        return L2_distances.median()
+        N = dists.size(-1)
+        return dists.detach().sum().item() / (N**2 - N)
+        # return dists.detach().median().item()
 
     def forward(self, z1, z2):  # noqa: D102
-        dists = torch.cdist(z1, z2, p=2.0).square()
-        sigma2 = self.get_bandwidth(dists) * self.bandwidth_multipliers
-        return torch.exp(-dists[..., None] / sigma2).sum(dim=-1)
+        dists = torch.cdist(z1, z2, p=self.p).pow(self.p)
+        sigma = self.get_bandwidth(dists) * self.bandwidth_multipliers
+        return torch.exp(-dists[..., None] / sigma).mean(dim=-1)
 
 
 def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
@@ -49,14 +60,17 @@ def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
             f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
         )
 
-    K_xx = kernel(x, x).mean(dim=(1, 2))
-    K_yy = kernel(y, y).mean(dim=(1, 2))
-    K_xy = kernel(x, y).mean(dim=(1, 2))
+    N = x.size(1)
+    xy = torch.cat([x, y], dim=1)
+    K = kernel(xy, xy)
+    K_xx = K[:, :N, :N].mean(dim=(1, 2))
+    K_yy = K[:, N:, N:].mean(dim=(1, 2))
+    K_xy = K[:, :N, N:].mean(dim=(1, 2))
     mmd_sq = K_xx + K_yy - 2.0 * K_xy
     return reduce(mmd_sq, dim=0, mode=reduction)
 
 
-def block_mmd(
+def mmd_by_block(
     x: Tensor, y: Tensor, kernel: nn.Module, block_size: int | None, reduction: str
 ) -> Tensor:
     """Block-based MMD implementation for scalable computation."""
@@ -76,7 +90,7 @@ def block_mmd(
     y_flat = y.reshape(-1, D)
     n_samples = (x_flat.size(0) // block_size) * block_size
     if n_samples == 0:
-        n_samples = x_flat.size(0)
+        return mmd(x_flat[None], y_flat[None], kernel=kernel, reduction=reduction)
 
     x_flat = x_flat[:n_samples]
     y_flat = y_flat[:n_samples]
@@ -97,7 +111,7 @@ class MMD(nn.Module):
         return mmd(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
 
-class BlockdMMD(nn.Module):
+class MMDBlock(nn.Module):
     """Block-based MMD implementation for scalable computation."""
 
     def __init__(
@@ -109,7 +123,7 @@ class BlockdMMD(nn.Module):
         self.reduction = reduction
 
     def forward(self, x: torch.Tensor, y: torch.Tensor):  # noqa: D102
-        return block_mmd(
+        return mmd_by_block(
             x=x,
             y=y,
             kernel=self.kernel,

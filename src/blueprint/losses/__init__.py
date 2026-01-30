@@ -4,6 +4,6 @@
 from . import autoweights
 from .hyvarinen import HyvarinenLoss
 from .loor import LOORLossFunc
-from .mmd import MMDLinearLossFunc
+from .mmd import MMDBlock
 
-__all__ = ["autoweights", "HyvarinenLoss", "LOORLossFunc", "MMDLinearLossFunc"]
+__all__ = ["autoweights", "HyvarinenLoss", "LOORLossFunc", "MMDBlock"]
