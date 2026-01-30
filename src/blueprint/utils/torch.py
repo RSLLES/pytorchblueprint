@@ -48,7 +48,7 @@ def get_memory_size(tensor: Tensor, as_string: bool = True) -> int | str:
     return format_size(size)
 
 
-def reduction(x: Tensor, dim: int, mode: str) -> Tensor:
+def reduce(x: Tensor, dim: int, mode: str) -> Tensor:
     """Reduce a tensor. Supports 'none' | 'mean' | 'sum' | 'min' | 'max'."""
     mode = format_string(mode)
     if mode == "none":
