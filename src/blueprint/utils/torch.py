@@ -10,7 +10,7 @@ import torch
 from torch import Tensor
 from torch.nn.modules.utils import _pair, _quadruple, _single, _triple
 
-from .format import format_size
+from .format import format_size, format_string
 
 
 def initialize_torch(detect_anomaly: bool = False):
@@ -46,6 +46,25 @@ def get_memory_size(tensor: Tensor, as_string: bool = True) -> int | str:
     if not as_string:
         return size
     return format_size(size)
+
+
+def reduction(x: Tensor, dim: int, mode: str) -> Tensor:
+    """Reduce a tensor. Supports 'none' | 'mean' | 'sum' | 'min' | 'max'."""
+    mode = format_string(mode)
+    if mode == "none":
+        return x
+    if mode == "sum":
+        return x.sum(dim=dim)
+    if mode == "mean":
+        return x.mean(dim=dim)
+    if mode == "min":
+        return x.amin(dim=dim)
+    if mode == "max":
+        return x.amax(dim=dim)
+    raise ValueError(
+        f"Unsupported reduction mode: {mode}."
+        "Use 'none' | 'mean' | 'sum' | 'min' | 'max'."
+    )
 
 
 """Helper functions to convert element to tuples"""
