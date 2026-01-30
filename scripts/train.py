@@ -11,7 +11,7 @@ from omegaconf import DictConfig, OmegaConf
 from blueprint import engine, utils
 
 
-@hydra.main(version_base=None, config_path="../configs", config_name="scorematching")
+@hydra.main(version_base=None, config_path="../configs", config_name="momentmatching")
 @utils.oom.handle_oom()
 def train(cfg: DictConfig) -> float:
     """Train a configuration."""
@@ -46,7 +46,7 @@ def train(cfg: DictConfig) -> float:
     cfg = utils.config.add_total_steps(cfg, step_per_epoch=len(ds_train))
 
     # model
-    with fabric.init_module(empty_init="ckpt_path" in cfg):
+    with fabric.init_module(empty_init="ckpt_path" in cfgr):
         model = instantiate(cfg.model)
         training_module = instantiate(cfg.trainer, model=model)
         opt = instantiate(cfg.optimizer, params=training_module.parameters())
