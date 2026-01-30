@@ -14,6 +14,8 @@ https://www.jmlr.org/papers/volume13/gretton12a/gretton12a.pdf
 import torch
 from torch import Tensor, nn
 
+from blueprint.utils.torch import reduce
+
 
 class RBF(nn.Module):
     """Radial Base function kernel."""
@@ -31,33 +33,86 @@ class RBF(nn.Module):
         return L2_distances.median()
 
     def forward(self, z1, z2):  # noqa: D102
-        L2_distances = torch.cdist(z1, z2, p=2.0).square()
-        sigma2 = self.get_bandwidth(L2_distances) * self.bandwidth_multipliers
-        return torch.exp(-L2_distances[..., None] / sigma2).sum(dim=-1)
+        dists = torch.cdist(z1, z2, p=2.0).square()
+        sigma2 = self.get_bandwidth(dists) * self.bandwidth_multipliers
+        return torch.exp(-dists[..., None] / sigma2).sum(dim=-1)
 
 
-class MMDLinearLossFunc(nn.Module):
-    """Implementation of Linear MMD."""
+def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
+    """Batchified (biased) MMD loss function."""
+    if x.ndim != 3 or y.ndim != 3:
+        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
+    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
+        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
+    if x.size(1) < 2 or y.size(1) < 2:
+        raise ValueError(
+            f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
+        )
 
-    def __init__(self, kernel=RBF()):
+    K_xx = kernel(x, x).mean(dim=(1, 2))
+    K_yy = kernel(y, y).mean(dim=(1, 2))
+    K_xy = kernel(x, y).mean(dim=(1, 2))
+    mmd_sq = K_xx + K_yy - 2.0 * K_xy
+    return reduce(mmd_sq, dim=0, mode=reduction)
+
+
+def block_mmd(
+    x: Tensor, y: Tensor, kernel: nn.Module, block_size: int | None, reduction: str
+) -> Tensor:
+    """Block-based MMD implementation for scalable computation."""
+    if x.dim() == 2:
+        x = x.unsqueeze(0)  # [1, Total, D]
+    if y.dim() == 2:
+        y = y.unsqueeze(0)  # [1, Total, D]
+
+    B, N, D = x.shape
+
+    if block_size is None or block_size <= 0:
+        return mmd(x, y, kernel=kernel, reduction=reduction)
+    if block_size == 1:
+        raise ValueError(f"MMD requires at least block_size >=2, got {block_size}.")
+
+    x_flat = x.reshape(-1, D)
+    y_flat = y.reshape(-1, D)
+    n_samples = (x_flat.size(0) // block_size) * block_size
+    if n_samples == 0:
+        n_samples = x_flat.size(0)
+
+    x_flat = x_flat[:n_samples]
+    y_flat = y_flat[:n_samples]
+    x_pack = x_flat.view(-1, block_size, D)
+    y_pack = y_flat.view(-1, block_size, D)
+    return mmd(x_pack, y_pack, kernel=kernel, reduction=reduction)
+
+
+class MMD(nn.Module):
+    """Batchified MMD loss function."""
+
+    def __init__(self, kernel: nn.Module, reduction: str = "mean"):
         super().__init__()
         self.kernel = kernel
+        self.reduction = reduction
 
-    @torch.compiler.disable
-    def forward(self, x: Tensor, y: Tensor, mask_x: Tensor, mask_y: Tensor):  # noqa: D102
-        x, y = x[mask_x], y[mask_y]
-        bs = min(x.size(0), y.size(0))
-        bs = bs - (bs % 2)
-        x, y = x[:bs], y[:bs]
+    def forward(self, x: Tensor, y: Tensor):  # noqa: D102
+        return mmd(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
-        if y.size(0) == 0 or x.size(0) == 0:
-            return torch.tensor((0.0), device=x.device)
 
-        x = x.reshape(bs // 2, 2, -1)
-        y = y.reshape(bs // 2, 2, -1)
-        z1 = torch.stack([x[:, 0], y[:, 0]], dim=1)
-        z2 = torch.stack([x[:, 1], y[:, 1]], dim=1)
+class BlockdMMD(nn.Module):
+    """Block-based MMD implementation for scalable computation."""
 
-        K = self.kernel(z1, z2)
-        MMD = K[:, 0, 0] + K[:, 1, 1] - K[:, 0, 1] - K[:, 1, 0]
-        return MMD.mean()
+    def __init__(
+        self, kernel: nn.Module, block_size: int | None, reduction: str = "mean"
+    ):
+        super().__init__()
+        self.block_size = block_size
+        self.kernel = kernel
+        self.reduction = reduction
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor):  # noqa: D102
+        return block_mmd(
+            x=x,
+            y=y,
+            kernel=self.kernel,
+            block_size=self.block_size,
+            reduction=self.reduction,
+        )
