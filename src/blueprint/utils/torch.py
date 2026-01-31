@@ -18,6 +18,7 @@ def initialize_torch(detect_anomaly: bool = False):
     if detect_anomaly:
         print("Warning: detect_anomaly is enabled.")
     torch.autograd.set_detect_anomaly(detect_anomaly)
+    torch.set_float32_matmul_precision("high")
     torch.set_printoptions(linewidth=160)
     torch._logging.set_logs(all=logging.WARNING)
     torch.autograd.graph.set_warn_on_accumulate_grad_stream_mismatch(False)  # weird
