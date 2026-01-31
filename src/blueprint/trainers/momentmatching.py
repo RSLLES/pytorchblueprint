@@ -5,7 +5,7 @@
 
 from torch import Tensor, nn
 
-from blueprint.losses import MMDBlock
+from blueprint.losses import MMD
 
 
 class MomentMatchingTrainer(nn.Module):
@@ -14,12 +14,12 @@ class MomentMatchingTrainer(nn.Module):
     def __init__(self, model: nn.Module, kernel: nn.Module):
         super().__init__()
         self.model = model
-        self.loss_func = MMDBlock(block_size=128, kernel=kernel)
+        self.loss_func = MMD(kernel=kernel)
 
     def forward(self, x: dict[str, Tensor]) -> dict[str, Tensor]:
         """Compute one training step loss for a batch of distributions."""
         x_source = x["sourcedist"]
         x_target = x["targetdist"]
         x_pred = self.model(x_source)
-        loss = self.loss_func(x_pred, x_target)
+        loss = self.loss_func(x_pred[None], x_target[None])
         return {"loss": loss}

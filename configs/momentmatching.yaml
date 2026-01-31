@@ -13,7 +13,7 @@ defaults:
   - hydra_defaults
   - _self_
 
-n_training_samples: ${eval:2**16}
+n_training_samples: ${eval:2**19}
 
 ds_val:
   sourcedist:
@@ -36,3 +36,4 @@ optimizer:
 
 runtime:
   name: momentmatching
+  batch_size: 512

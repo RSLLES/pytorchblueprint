@@ -39,9 +39,10 @@ class ExponentialKernel(nn.Module):
         """Return the median of the distances matrix by default."""
         if self.bandwidth is not None:
             return self.bandwidth
+        dists = dists.detach()
         N = dists.size(-1)
-        return dists.detach().sum().item() / (N**2 - N)
-        # return dists.detach().median().item()
+        return dists.mean().item() * (N / (N - 1.0))
+        # return dists.median().item()
 
     def forward(self, z1, z2):  # noqa: D102
         dists = torch.cdist(z1, z2, p=self.p).pow(self.p)
