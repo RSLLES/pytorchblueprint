@@ -4,5 +4,11 @@
 from .flowmatchingtrainer import FlowMatchingTrainer
 from .momentmatching import MomentMatchingTrainer
 from .scorematching import ScoreMatchingTrainer
+from .wasserteinmatching import WasserteinMatchingTrainer
 
-__all__ = ["FlowMatchingTrainer", "MomentMatchingTrainer", "ScoreMatchingTrainer"]
+__all__ = [
+    "FlowMatchingTrainer",
+    "MomentMatchingTrainer",
+    "ScoreMatchingTrainer",
+    "WasserteinMatchingTrainer",
+]
