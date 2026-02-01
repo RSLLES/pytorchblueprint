@@ -22,8 +22,8 @@ class CoVWeighting(nn.Module):
         self.register_buffer("mu_l", torch.zeros(n_losses))
         self.register_buffer("M", torch.zeros(n_losses))
 
-    def forward(self, losses: Tensor):
-        """Return the weighted loss."""
+    def forward(self, losses: Tensor) -> Tensor:
+        """Return the weights associated with each loss."""
         if losses.ndim != 1 or losses.size(0) != self.n_losses:
             raise ValueError(
                 f"Losses must have a shape of ({self.n_losses},); found {losses.size()}"
@@ -60,5 +60,4 @@ class CoVWeighting(nn.Module):
         self.mu_l = mu_l
         self.M = M
 
-        loss = (w * losses).sum()
-        return loss
+        return w
