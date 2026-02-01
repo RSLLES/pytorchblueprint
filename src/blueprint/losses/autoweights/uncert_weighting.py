@@ -16,29 +16,26 @@ class L2UncertaintyWeighting(nn.Module):
         if n_losses < 1:
             raise ValueError(f"n_losses must be >=1, got {n_losses}.")
         self.register_buffer("initialized", torch.tensor(False))
-        self.register_buffer("log_sigma_ref", torch.empty((n_losses,)))
-        self.log_sigma_weights = nn.Parameter(torch.ones((n_losses,)))
+        self.log_sigma = nn.Parameter(torch.empty((n_losses,)))
         self.eps = eps
 
     @torch.compiler.disable()
     @torch.no_grad()
     def initialize(self, losses: Tensor):
-        """Initialize log_sigma_ref once at the first pass."""
+        """Initialize log_sigma once at the first pass."""
         init = 0.5 * torch.log(losses + self.eps)
         if dist.is_initialized():
             dist.broadcast(init, src=0)
-        self.log_sigma_ref.copy_(init)
+        self.log_sigma.copy_(init)
         self.initialized.fill_(True)
 
     def forward(self, losses: torch.Tensor) -> torch.Tensor:
         """Return the weighted loss sum."""
-        if losses.dim() > 1 or losses.numel() != self.log_sigma_ref.numel():
+        if losses.dim() > 1 or losses.numel() != self.log_sigma.numel():
             raise ValueError(f"Wrong losses shape: {losses.size()}")
         if (losses < 0.0).any():
-            raise ValueError("Losses are expected to be L2-losses; they can't be <= 0.")
+            raise ValueError("Losses are expected to be L2 losses; can't be negative.")
         if not self.initialized:
             self.initialize(losses)
-        log_sigma = self.log_sigma_ref * self.log_sigma_weights
-        losses = 0.5 * torch.exp(-2.0 * log_sigma) * losses + log_sigma
-        loss = losses.sum()
-        return loss
+        losses = 0.5 * torch.exp(-2.0 * self.log_sigma) * losses + self.log_sigma
+        return losses.sum()
