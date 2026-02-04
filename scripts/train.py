@@ -53,6 +53,9 @@ def train(cfg: DictConfig) -> float:
         scheduler = instantiate(cfg.scheduler, optimizer=opt)
     if fabric.is_global_zero:
         utils.model.present_model(model)
+    if cfgr.get("explain", False):
+        utils.model.explain_model(training_module, dl_train, fabric=fabric)
+        utils.fabric.exit_with_barrier(fabric)
     if cfgr.compile:
         training_module.compile()
         if fabric.is_global_zero:

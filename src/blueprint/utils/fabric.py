@@ -4,6 +4,7 @@
 """Utility functions for fabric."""
 
 import contextlib
+import sys
 
 from lightning.fabric.connector import _is_using_cli
 from lightning_fabric import Fabric
@@ -28,3 +29,9 @@ def global_zero_context(ctx_manager_factory, fabric: Fabric):
             yield ctx
     else:
         yield None
+
+
+def exit_with_barrier(fabric: Fabric):
+    """Exit that triggers the barrier first."""
+    fabric.barrier()
+    sys.exit(0)
