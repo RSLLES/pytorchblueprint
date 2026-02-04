@@ -51,9 +51,9 @@ def load_training(
 ) -> tuple[float, float]:
     """Load training module and optimizer states, returning epoch and step."""
     d = fabric.load(ckpt_path)
+    training_module.load_state_dict(d["training_module"])
     optimizer.load_state_dict(d["optimizer"])
     scheduler.load_state_dict(d["scheduler"])
-    training_module.load_state_dict(d["training_module"])
     return d["epoch"], d["step"]
 
 
