@@ -4,6 +4,8 @@
 from torch import Tensor, nn
 from torch.func import jacrev, vmap
 
+from blueprint.utils.torch import reduce
+
 
 class HyvarinenLoss(nn.Module):
     """Hyvarinen Score Matching loss, L = (1/2) * ||f(x)||^2 + Tr(nabla_x(f(x)))."""
@@ -36,8 +38,4 @@ def hyvarinen_loss(score_net: nn.Module, x: Tensor, reduction: str = "mean") -> 
     trace = jacobians.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
     loss = norm_sq + trace
     loss = loss.view(batch_shape)
-    if reduction == "mean":
-        return loss.mean()
-    elif reduction == "none":
-        return loss
-    raise ValueError(f"Invalid reduction: {reduction}. Use 'mean' or 'none'.")
+    return reduce(loss, mode=reduction, dim=0)
