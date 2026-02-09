@@ -23,6 +23,7 @@ def train(cfg: DictConfig) -> float:
 
     cfg = utils.config.add_git_commit_hash(cfg)
     cfg = utils.config.add_eff_batch_size(cfg, world_size=fabric.world_size)
+    cfgr.world_size = fabric.world_size
     if fabric.is_global_zero:
         print(OmegaConf.to_yaml(cfg, sort_keys=True))
 
