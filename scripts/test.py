@@ -27,11 +27,11 @@ def test(cfg: DictConfig):
         utils.model.present_model(model)
 
     if "weights_path" in cfg:
-        utils.checkpoint.load_weights(
+        epoch, step = utils.checkpoint.load_weights(
             fabric=fabric, ckpt_path=cfg.weights_path, model=model
         )
         if fabric.is_global_zero:
-            print(f"Weights loaded from {cfg.weights_path}")
+            print(f"Weights loaded from {cfg.weights_path}: epoch {epoch} step {step}.")
     else:
         if fabric.is_global_zero:
             print("Warning: no weights loaded.")

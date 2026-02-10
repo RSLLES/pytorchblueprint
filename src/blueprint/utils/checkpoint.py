@@ -32,28 +32,32 @@ def load_weights(
     model_prefix: str = "model.",
 ):
     """Load model weights from a checkpoint into the model."""
-    ckpt = fabric.load(ckpt_path)
-    training_module_state_dict = ckpt["training_module"]
+    d = fabric.load(ckpt_path)
+    training_module_state_dict = d["training_module"]
     model_state_dict = {
         k[len(model_prefix) :]: v
         for k, v in training_module_state_dict.items()
         if k.startswith(model_prefix)
     }
     model.load_state_dict(model_state_dict, strict=strict)
+    return d["epoch"], d["step"]
 
 
 def load_training(
     fabric: Fabric,
     ckpt_path: str,
-    optimizer: Optimizer,
-    scheduler: LRScheduler,
-    training_module: Module,
-) -> tuple[float, float]:
+    optimizer: Optimizer | None = None,
+    scheduler: LRScheduler | None = None,
+    training_module: Module | None = None,
+) -> tuple[int, int]:
     """Load training module and optimizer states, returning epoch and step."""
     d = fabric.load(ckpt_path)
-    training_module.load_state_dict(d["training_module"])
-    optimizer.load_state_dict(d["optimizer"])
-    scheduler.load_state_dict(d["scheduler"])
+    if training_module is not None:
+        training_module.load_state_dict(d["training_module"])
+    if optimizer is not None:
+        optimizer.load_state_dict(d["optimizer"])
+    if scheduler is not None:
+        scheduler.load_state_dict(d["scheduler"])
     return d["epoch"], d["step"]
 
 
