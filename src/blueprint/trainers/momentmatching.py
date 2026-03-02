@@ -9,7 +9,7 @@ from blueprint.losses import MMDFuse
 
 
 class MomentMatchingTrainer(nn.Module):
-    """Train a model with Hyvarinen Score Matching."""
+    """Train a model with an MMD."""
 
     def __init__(self, model: nn.Module, kernel: nn.Module):
         super().__init__()

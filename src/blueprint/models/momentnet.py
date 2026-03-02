@@ -24,7 +24,7 @@ class MomentNet(nn.Module):
     def __init__(self, input_dim: int, inner_dim: int, embed_scale: float = 1.0):
         super().__init__()
         self.net = nn.Sequential(
-            FourierEmbeddings(input_dim, inner_dim),
+            FourierEmbeddings(input_dim, inner_dim, scale=embed_scale),
             nn.Linear(inner_dim, inner_dim),
             nn.SiLU(),
             ResnetBlock(inner_dim),
