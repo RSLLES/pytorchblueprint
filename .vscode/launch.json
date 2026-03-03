@@ -21,11 +21,11 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": "${command:pickArgs} ++runtime.n_workers=0 ++runtime.batch_size=5 ++runtime.compile=false",
+            // "args": "++runtime.compile=false",
             // "justMyCode": false,
             "justMyCode": true,
             "env": {
                 "HYDRA_FULL_ERROR": "1",
-                "CUDA_VISIBLE_DEVICES": "3",
             }
         },
     ]

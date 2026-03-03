@@ -4,6 +4,23 @@
 from . import autoweights
 from .hyvarinen import HyvarinenLoss
 from .loor import LOORLossFunc
-from .mmd import MMD, MMDFuse
+from .mmd import (
+    MMD,
+    ExponentialKernel,
+    LaplaceGaussianKernel,
+    MMDFuse,
+    MMDLinear,
+    MMDMax,
+)
 
-__all__ = ["autoweights", "HyvarinenLoss", "LOORLossFunc", "MMD", "MMDFuse"]
+__all__ = [
+    "autoweights",
+    "HyvarinenLoss",
+    "LOORLossFunc",
+    "MMD",
+    "ExponentialKernel",
+    "LaplaceGaussianKernel",
+    "MMDFuse",
+    "MMDLinear",
+    "MMDMax",
+]

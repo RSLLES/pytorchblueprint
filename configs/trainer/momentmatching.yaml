@@ -3,6 +3,5 @@
 
 _target_: blueprint.trainers.MomentMatchingTrainer
 kernel:
-  _target_: blueprint.losses.mmd.ExponentialKernel
-  p: 1
+  _target_: blueprint.losses.mmd.LaplaceGaussianKernel
   n_kernels: 10

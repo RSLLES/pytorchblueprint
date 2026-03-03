@@ -5,7 +5,7 @@
 
 from torch import Tensor, nn
 
-from blueprint.losses import MMDFuse
+from blueprint.losses import MMDLinear
 
 
 class MomentMatchingTrainer(nn.Module):
@@ -14,7 +14,7 @@ class MomentMatchingTrainer(nn.Module):
     def __init__(self, model: nn.Module, kernel: nn.Module):
         super().__init__()
         self.model = model
-        self.loss_func = MMDFuse(kernel=kernel)
+        self.loss_func = MMDLinear(kernel=kernel)
 
     def forward(self, x: dict[str, Tensor]) -> dict[str, Tensor]:
         """Compute one training step loss for a batch of distributions."""
