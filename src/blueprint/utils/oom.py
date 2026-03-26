@@ -47,6 +47,7 @@ def handle_oom(cfg_attr_name="cfg"):
                         f"and n_accum_steps={cfgr.n_accum_steps}."
                     )
                     torch.cuda.empty_cache()
+                    torch._dynamo.reset()
 
         return wrapper
 
