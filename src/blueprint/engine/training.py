@@ -19,8 +19,8 @@ def train(
     fabric: Fabric,
     model: nn.Module,
     training_module: nn.Module,
-    opt: Optimizer,
-    scheduler: LRScheduler,
+    optimizer: Optimizer | list[Optimizer],
+    scheduler: LRScheduler | list[LRScheduler],
     dl_train: DataLoader,
     dl_val: DataLoader,
     watched_metric: str,
@@ -38,6 +38,10 @@ def train(
     # init
     best_epoch = begin_epoch
     best_metric = float("-inf")
+
+    optimizers = [optimizer] if isinstance(optimizer, Optimizer) else optimizer
+    schedulers = [scheduler] if isinstance(scheduler, LRScheduler) else scheduler
+
     logger = None  # delayed initialization
     loss_history = []
     n_epochs = n_epochs if n_epochs >= 0 else sys.maxsize**10
@@ -51,8 +55,8 @@ def train(
             fabric=fabric,
             dl=dl_train,
             n_accum_steps=n_accum_steps,
-            opt=opt,
-            scheduler=scheduler,
+            optimizers=optimizers,
+            schedulers=schedulers,
             step=step,
             training_module=training_module,
             enable_profiling=enable_profiling,
@@ -82,9 +86,9 @@ def train(
             path=path_last_ckpt,
             epoch=epoch,
             step=step,
-            optimizer_state_dict=opt.state_dict(),
-            scheduler_state_dict=scheduler.state_dict(),
-            training_module_state_dict=training_module.state_dict(),
+            optimizer=optimizer,
+            scheduler=scheduler,
+            model=training_module,
         )
         if metrics[watched_metric] >= best_metric:
             best_epoch = epoch
@@ -94,9 +98,9 @@ def train(
                 path=path_best_ckpt,
                 epoch=epoch,
                 step=step,
-                optimizer_state_dict=opt.state_dict(),
-                scheduler_state_dict=scheduler.state_dict(),
-                training_module_state_dict=training_module.state_dict(),
+                optimizer=optimizer,
+                scheduler=scheduler,
+                model=training_module,
             )
 
         # early stopping
@@ -114,9 +118,9 @@ def train(
                 utils.checkpoint.load_training(
                     fabric=fabric,
                     ckpt_path=path_best_ckpt,
-                    optimizer=opt,
+                    optimizer=optimizer,
                     scheduler=scheduler,
-                    training_module=training_module,
+                    model=training_module,
                 )
                 loss_history = []
 

@@ -50,8 +50,8 @@ def train(cfg: DictConfig) -> float:
     with fabric.init_module(empty_init="ckpt_path" in cfgr):
         model = instantiate(cfg.model)
         training_module = instantiate(cfg.trainer, model=model)
-        opt = instantiate(cfg.optimizer, params=training_module.parameters())
-        scheduler = instantiate(cfg.scheduler, optimizer=opt)
+        optimizer = instantiate(cfg.optimizer, params=training_module.parameters())
+        scheduler = instantiate(cfg.scheduler, optimizer=optimizer)
     if fabric.is_global_zero:
         utils.model.present_model(model)
     if cfgr.get("explain", False):
@@ -67,16 +67,20 @@ def train(cfg: DictConfig) -> float:
         epoch, step = utils.checkpoint.load_training(
             fabric=fabric,
             ckpt_path=cfgr.ckpt_path,
-            optimizer=opt,
+            model=training_module,
+            optimizer=optimizer,
             scheduler=scheduler,
-            training_module=training_module,
         )
         epoch += 1
         if fabric.is_global_zero:
             print(f"Training checkpoint loaded from {cfgr.ckpt_path}")
     elif "weights_path" in cfgr:
-        utils.checkpoint.load_weights(
-            fabric=fabric, ckpt_path=cfgr.weights_path, model=model
+        utils.checkpoint.load_training(
+            fabric=fabric,
+            ckpt_path=cfgr.weights_path,
+            model=training_module,
+            optimizer=None,
+            scheduler=None,
         )
         if fabric.is_global_zero:
             print(f"Weights loaded from {cfgr.weights_path}")
@@ -97,13 +101,13 @@ def train(cfg: DictConfig) -> float:
         print(f"Log directory is {cfgr.log_dir}")
 
     # acceleration
-    training_module, opt = fabric.setup(training_module, opt)
+    training_module, optimizer = fabric.setup(training_module, optimizer)
     dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
 
     # train
     best_metric = engine.train(
         fabric=fabric,
-        opt=opt,
+        optimizer=optimizer,
         scheduler=scheduler,
         model=model,
         training_module=training_module,

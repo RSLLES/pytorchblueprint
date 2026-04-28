@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import LRScheduler
 ### Logs ###
 
 
-def get_ckpts_path(log_dir: str, ckpt_dir: str = None) -> (str, str):
+def get_ckpts_path(log_dir: str, ckpt_dir: str | None = None) -> tuple[str, str]:
     """Return the paths to the last and best checkpoint files."""
     root = os.path.join(log_dir, ckpt_dir) if ckpt_dir is not None else log_dir
     path_best_ckpt = os.path.join(root, "best.tar")
@@ -24,40 +24,30 @@ def get_ckpts_path(log_dir: str, ckpt_dir: str = None) -> (str, str):
 ### Load ###
 
 
-def load_weights(
-    fabric: Fabric,
-    ckpt_path: str,
-    model: Module,
-    strict: bool = True,
-    model_prefix: str = "model.",
-):
-    """Load model weights from a checkpoint into the model."""
-    d = fabric.load(ckpt_path)
-    training_module_state_dict = d["training_module"]
-    model_state_dict = {
-        k[len(model_prefix) :]: v
-        for k, v in training_module_state_dict.items()
-        if k.startswith(model_prefix)
-    }
-    model.load_state_dict(model_state_dict, strict=strict)
-    return d["epoch"], d["step"]
-
-
 def load_training(
     fabric: Fabric,
     ckpt_path: str,
-    optimizer: Optimizer | None = None,
-    scheduler: LRScheduler | None = None,
-    training_module: Module | None = None,
+    model: Module,
+    optimizer: Optimizer | list[Optimizer] | None,
+    scheduler: LRScheduler | list[LRScheduler] | None,
+    strict: bool = False,
 ) -> tuple[int, int]:
     """Load training module and optimizer states, returning epoch and step."""
     d = fabric.load(ckpt_path)
-    if training_module is not None:
-        training_module.load_state_dict(d["training_module"])
-    if optimizer is not None:
+    model.load_state_dict(d["model"], strict=strict)
+
+    if isinstance(optimizer, Optimizer):
         optimizer.load_state_dict(d["optimizer"])
-    if scheduler is not None:
+    if isinstance(optimizer, list):
+        for opt, opt_state in zip(optimizer, d["optimizer"]):
+            opt.load_state_dict(opt_state)
+
+    if isinstance(scheduler, LRScheduler):
         scheduler.load_state_dict(d["scheduler"])
+    if isinstance(scheduler, list):
+        for sche, sche_state in zip(scheduler, d["scheduler"]):
+            sche.load_state_dict(sche_state)
+
     return d["epoch"], d["step"]
 
 
@@ -69,17 +59,17 @@ def save_training(
     path: str,
     epoch: int,
     step: int,
-    optimizer_state_dict: dict,
-    scheduler_state_dict: dict,
-    training_module_state_dict: dict,
+    model: Module,
+    optimizer: Optimizer | list[Optimizer],
+    scheduler: LRScheduler | list[LRScheduler],
 ):
     """Save training state to a checkpoint file."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {
         "epoch": epoch,
         "step": step,
-        "optimizer": optimizer_state_dict,
-        "scheduler": scheduler_state_dict,
-        "training_module": training_module_state_dict,
+        "optimizer": optimizer,
+        "scheduler": scheduler,
+        "model": model,
     }
     fabric.save(path, state)
