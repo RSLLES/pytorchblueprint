@@ -3,7 +3,6 @@
 
 from . import autoweights
 from .hyvarinen import HyvarinenLoss
-from .loor import LOORLossFunc
 from .mmd import (
     MMD,
     ExponentialKernel,
@@ -12,15 +11,17 @@ from .mmd import (
     MMDLinear,
     MMDMax,
 )
+from .reinforce import BaselineRLLossFunc, LOORLossFunc
 
 __all__ = [
     "autoweights",
     "HyvarinenLoss",
-    "LOORLossFunc",
     "MMD",
     "ExponentialKernel",
     "LaplaceGaussianKernel",
     "MMDFuse",
     "MMDLinear",
     "MMDMax",
+    "BaselineRLLossFunc",
+    "LOORLossFunc",
 ]
