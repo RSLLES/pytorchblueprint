@@ -3,38 +3,32 @@
 
 from torch import Tensor, nn
 
-from .basics import FourierEmbeddings
-
-
-class ResnetBlock(nn.Module):
-    """ResNet block with SiLU activation."""
-
-    def __init__(self, dim):
-        super().__init__()
-        self.block = nn.Sequential(nn.Linear(dim, dim), nn.SiLU(), nn.Linear(dim, dim))
-        self.act = nn.SiLU()
-
-    def forward(self, x):  # noqa: D102
-        return self.act(x + self.block(x))
+from .basics import FourierEmbeddings, ResnetBlocks
 
 
 class MomentNet(nn.Module):
     """Toy model that learns a input_dim-D  function."""
 
-    def __init__(self, input_dim: int, inner_dim: int, embed_scale: float = 1.0):
+    def __init__(
+        self,
+        input_dim: int,
+        inner_dim: int,
+        output_dim: int | None = None,
+        embed_scale: float = 1.0,
+    ):
         super().__init__()
+        self.output_dim = input_dim if output_dim is None else output_dim
         self.net = nn.Sequential(
             FourierEmbeddings(input_dim, inner_dim, scale=embed_scale),
             nn.Linear(inner_dim, inner_dim),
             nn.SiLU(),
-            ResnetBlock(inner_dim),
-            ResnetBlock(inner_dim),
-            nn.Linear(inner_dim, input_dim),
+            ResnetBlocks(inner_dim, depth=2),
+            nn.Linear(inner_dim, self.output_dim),
         )
 
     def forward(self, x: Tensor) -> Tensor:  # noqa: D102
-        x_shape = x.shape
+        output_shape = x.shape[:-1] + (self.output_dim,)
         x_flat = x.reshape(-1, x.size(-1))
         outputs_flat = self.net(x_flat)
-        outputs = outputs_flat.view(*x_shape)
+        outputs = outputs_flat.view(*output_shape)
         return outputs

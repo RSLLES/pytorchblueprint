@@ -3,6 +3,7 @@
 
 from . import unet_parts
 from .fourier_embeddings import FourierEmbeddings
+from .resnet import ResnetBlock, ResnetBlocks
 from .unet_model import UNet
 
-__all__ = ["unet_parts", "FourierEmbeddings", "UNet"]
+__all__ = ["unet_parts", "FourierEmbeddings", "ResnetBlock", "ResnetBlocks", "UNet"]
