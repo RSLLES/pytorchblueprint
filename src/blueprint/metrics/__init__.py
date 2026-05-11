@@ -2,7 +2,13 @@
 # LICENSE file in the root directory of this source tree.
 
 from .meandict import MeanDictMetric
+from .median_of_means import MedianOfMeans
 from .quantile import ReservoirOnlineQuantile
 from .wassertein_distance import WassersteinDistance
 
-__all__ = ["MeanDictMetric", "ReservoirOnlineQuantile", "WassersteinDistance"]
+__all__ = [
+    "MeanDictMetric",
+    "MedianOfMeans",
+    "ReservoirOnlineQuantile",
+    "WassersteinDistance",
+]
