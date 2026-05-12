@@ -7,10 +7,11 @@ from torch import nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
+from torchmetrics import MeanMetric
 from tqdm import tqdm
 
 from blueprint import utils
-from blueprint.metrics import MeanDictMetric
+from blueprint.metrics import LazyMetricCollection, MedianOfMeans
 from blueprint.utils import profiler
 
 
@@ -29,15 +30,20 @@ def train_one_epoch(
     if len(dl) == 0:
         return {"loss": torch.tensor(torch.nan, device=fabric.device)}, step
 
+    n_steps = len(dl) // n_accum_steps
+    n_steps += 1 if len(dl) % n_accum_steps > 0 else 0
+
     training_module.train()
     for opt in optimizers:
         opt.zero_grad()
 
-    step_metrics = MeanDictMetric(device=fabric.device)
-    epoch_metrics = MeanDictMetric(device=fabric.device)
+    step_metrics = LazyMetricCollection(lambda: MeanMetric().to(device=fabric.device))
+    epoch_metrics = LazyMetricCollection(
+        lambda: MedianOfMeans(n_groups=MedianOfMeans.recommended_n_groups(n_steps)).to(
+            device=fabric.device
+        )
+    )
 
-    n_steps = len(dl) // n_accum_steps
-    n_steps += 1 if len(dl) % n_accum_steps > 0 else 0
     disable_stdout = not fabric.is_global_zero
     with tqdm(
         total=0, bar_format="{desc}", position=0, leave=False, disable=disable_stdout
