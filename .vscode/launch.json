@@ -20,7 +20,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args": "${command:pickArgs} ++runtime.n_workers=0 ++runtime.batch_size=5 ++runtime.compile=false",
+            "args": "${command:pickArgs} ++runtime.log_dir=/tmp ++runtime.n_workers=0 ++runtime.batch_size=1024 ++runtime.compile=false",
             // "args": "++runtime.compile=false",
             // "justMyCode": false,
             "justMyCode": true,

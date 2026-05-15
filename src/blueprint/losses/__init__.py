@@ -3,13 +3,14 @@
 
 from . import autoweights
 from .hyvarinen import HyvarinenLoss
-from .mmd import MMD, MMDFuse, MMDLinear, MMDMax
+from .mmd import MMD, MMDRFF, MMDFuse, MMDLinear, MMDMax
 from .reinforce import BaselineRLLossFunc, LOORLossFunc
 
 __all__ = [
     "autoweights",
     "HyvarinenLoss",
     "MMD",
+    "MMDRFF",
     "MMDFuse",
     "MMDLinear",
     "MMDMax",

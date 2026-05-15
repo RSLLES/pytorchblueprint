@@ -20,6 +20,11 @@ https://proceedings.neurips.cc/paper_files/paper/2023/file/edd00cead3425393baf13
 Beatrice and Guedj, Benjamin and Gretton, Arthur (2023).
 MMD Aggregated Two-Sample Test. Journal of Machine Learning Research
 https://www.jmlr.org/papers/volume24/21-1289/21-1289.pdf
+
+[4] Mukherjee, Soumya and Sriperumbudur, Bharath K.
+Minimax Optimal Kernel Two-Sample Tests with Random Features. (2025)
+arXiv preprint.
+https://arxiv.org/abs/2502.20755
 """
 
 import torch
@@ -128,6 +133,24 @@ def linear_mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tenso
     return reduce(mmd_linear_sq, dim=0, mode=reduction)
 
 
+def rff_mmd(
+    x: Tensor, y: Tensor, dist: nn.Module, n_features: int, reduction: str
+) -> Tensor:
+    """Implement RFF MDD."""
+    if x.ndim != 3 or y.ndim != 3:
+        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
+    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
+        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
+    w = dist(x, y, n_features=n_features)
+    phase_x = torch.einsum("bnd,rdk->bnrk", x, w)
+    phase_y = torch.einsum("bnd,rdk->bnrk", y, w)
+    mu_x = torch.exp(1j * phase_x).mean(dim=1)
+    mu_y = torch.exp(1j * phase_y).mean(dim=1)
+    mmd_rff = (mu_x - mu_y).abs().square().mean(dim=1)
+    mmd_rff = mmd_rff.mean(dim=1)
+    return reduce(mmd_rff, dim=0, mode=reduction)
+
+
 class MMD(nn.Module):
     """Batchified MMD."""
 
@@ -174,3 +197,22 @@ class MMDLinear(nn.Module):
 
     def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
         return linear_mmd(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
+
+
+class MMDRFF(nn.Module):
+    """RFF MMD."""
+
+    def __init__(self, dist: nn.Module, n_features: int, reduction: str = "mean"):
+        super().__init__()
+        self.dist = dist
+        self.n_features = n_features
+        self.reduction = reduction
+
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+        return rff_mmd(
+            x=x,
+            y=y,
+            dist=self.dist,
+            n_features=self.n_features,
+            reduction=self.reduction,
+        )

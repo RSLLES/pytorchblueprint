@@ -2,5 +2,6 @@
 # LICENSE file in the root directory of this source tree.
 
 from .exponential import ExponentialKernel, LaplaceGaussianKernel
+from .normal import NormalDistribution
 
-__all__ = ["ExponentialKernel", "LaplaceGaussianKernel"]
+__all__ = ["ExponentialKernel", "LaplaceGaussianKernel", "NormalDistribution"]
