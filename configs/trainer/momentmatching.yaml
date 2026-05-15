@@ -2,6 +2,9 @@
 # LICENSE file in the root directory of this source tree.
 
 _target_: blueprint.trainers.MomentMatchingTrainer
-kernel:
-  _target_: blueprint.losses.mmd.LaplaceGaussianKernel
-  n_kernels: 10
+mmd_model:
+  _target_: blueprint.losses.mmd.MMDMax
+  kernel:
+    _target_: blueprint.models.kernels.ExponentialKernel
+    p: 1
+    n_kernels: 5

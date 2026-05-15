@@ -36,4 +36,4 @@ optimizer:
 
 runtime:
   name: momentmatching
-  batch_size: 512
+  batch_size: 1024
