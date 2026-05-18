@@ -23,6 +23,7 @@ def train_one_epoch(
     optimizers: list[Optimizer],
     schedulers: list[LRScheduler],
     step: int,
+    grad_clip_norm: float | None,
     training_module: nn.Module,
     enable_profiling: bool,
 ) -> tuple[dict, int]:
@@ -68,6 +69,10 @@ def train_one_epoch(
                     metrics = step_metrics.compute()
 
                     for opt in optimizers:
+                        if grad_clip_norm is not None:
+                            fabric.clip_gradients(
+                                training_module, opt, max_norm=grad_clip_norm
+                            )
                         opt.step()
                     for i, sche in enumerate(schedulers):
                         metrics[f"lr{i}"] = sche.get_last_lr()[0]

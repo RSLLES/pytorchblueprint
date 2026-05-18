@@ -123,6 +123,7 @@ def train(cfg: DictConfig) -> float:
         watched_metric=cfgr.watched_metric,
         enable_divergence_detection=cfgr.divergence_detection,
         enable_profiling=cfgr.profiling,
+        grad_clip_norm=cfgr.grad_clip_norm,
     )
     return best_metric
 

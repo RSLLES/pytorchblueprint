@@ -31,6 +31,7 @@ def train(
     n_epochs: int = -1,
     n_accum_steps: int = 1,
     patience: int = -1,
+    grad_clip_norm: float | None = None,
     enable_divergence_detection: bool = True,
     enable_profiling: bool = False,
 ):
@@ -58,6 +59,7 @@ def train(
             optimizers=optimizers,
             schedulers=schedulers,
             step=step,
+            grad_clip_norm=grad_clip_norm,
             training_module=training_module,
             enable_profiling=enable_profiling,
         )
