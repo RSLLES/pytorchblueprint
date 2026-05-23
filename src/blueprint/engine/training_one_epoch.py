@@ -55,6 +55,7 @@ def train_one_epoch(
             with profiler.Profiler(disable=not enable_profiling) as prof:
                 for batch_idx, batch in enumerate(dl):
                     is_accumulating = (batch_idx + 1) % n_accum_steps != 0
+                    batch["step"] = torch.tensor(step, device=fabric.device)
 
                     with fabric.no_backward_sync(
                         training_module, enabled=is_accumulating
