@@ -10,45 +10,10 @@ https://openaccess.thecvf.com/content/ICCV2025W/Findings/papers/Neo_Multi-Object
 """
 
 import torch
-import torch.distributed as dist
 import torch.nn.functional as F
 from torch import Tensor, nn
 
-
-class ExpMovingAverage(nn.Module):
-    """Exponential moving average for a 1D Tensor."""
-
-    mean: Tensor
-    is_initialized: Tensor
-
-    def __init__(self, lambd: float, n_values: int = 1) -> None:
-        super().__init__()
-        self.lambd = lambd
-        self.register_buffer("mean", torch.zeros((n_values,)))
-        self.register_buffer("is_initialized", torch.tensor(False, dtype=torch.bool))
-
-    @torch.compiler.disable
-    def _sync_values(self, x: Tensor) -> Tensor:
-        if dist.is_available() and dist.is_initialized():
-            x = x.clone()
-            dist.all_reduce(x, op=dist.ReduceOp.AVG)
-        return x
-
-    @torch.compiler.disable
-    def _initialize_buffer(self, x: Tensor):
-        x_synced = self._sync_values(x)
-        self.mean.copy_(x_synced)
-        self.is_initialized.fill_(True)
-
-    @torch.no_grad()
-    def forward(self, x: Tensor) -> Tensor:
-        """Update the current ema and return the new value."""
-        if not self.is_initialized:
-            self._initialize_buffer(x)
-            return self.mean
-        x_synced = self._sync_values(x)
-        self.mean.mul_(1.0 - self.lambd).add_(x_synced, alpha=self.lambd)
-        return self.mean
+from blueprint.utils.ema import ExpMovingAverage
 
 
 class PeacockWeighting(nn.Module):
