@@ -80,8 +80,9 @@ class ReLoBRaLo(nn.Module):
         self.L_prev.copy_(synced)
         return self.w
 
-    def step(self, losses: list[Tensor]) -> Tensor:
+    def forward(self, losses: Tensor) -> Tensor:
         """Return weighted total loss; update weights in place."""
-        vals = torch.stack([loss.detach() for loss in losses])
-        w = self._update(vals).detach()
-        return (w * torch.stack(losses)).sum()
+        if losses.dim() > 1 or losses.numel() != self.n_losses:
+            raise ValueError(f"Wrong losses shape: {losses.size()}")
+        w = self._update(losses.detach()).detach()
+        return (w * losses).sum()
