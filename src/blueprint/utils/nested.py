@@ -46,6 +46,11 @@ def pad_sequence(
     return out
 
 
+def lengths_to_mask(lengths: Tensor, padded_len: int) -> Tensor:
+    """Return a boolean mask of shape (B, padded_len) that marks valid positions."""
+    return torch.arange(padded_len, device=lengths.device) < lengths.unsqueeze(1)
+
+
 def expand_to_list(x: Tensor, lengths: Tensor) -> list[Tensor]:
     """Slice a padded tensor back into a list using the given lengths."""
     x = [e[:i] for e, i in zip(x, lengths)]
