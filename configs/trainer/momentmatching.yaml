@@ -3,9 +3,14 @@
 
 _target_: blueprint.trainers.MomentMatchingTrainer
 mmd_model:
-  _target_: blueprint.losses.mmd.MMDRFF
-  n_features: 256
-  dist:
-    _target_: blueprint.models.kernels.NormalDistribution
+  _target_: blueprint.losses.MMDMax
+  kernel:
+    _target_: blueprint.models.kernels.ExponentialKernel
+    p: 1
     n_kernels: 5
-    n_subsample: 128
+  # _target_: blueprint.losses.mmd.MMDRFF
+  # n_features: 256
+  # dist:
+  #   _target_: blueprint.models.kernels.NormalDistribution
+  #   n_kernels: 5
+  #   n_subsample: 128
