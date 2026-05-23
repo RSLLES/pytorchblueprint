@@ -11,10 +11,14 @@ from lightning_fabric import Fabric
 
 
 def initialize_fabric(
-    seed: int, precision: str = "32-true", devices: str | int = "auto"
-) -> Fabric:
+    seed: int,
+    precision: str = "32-true",
+    devices: str | int = "auto",
+    find_unused_parameters: bool = False,
+):
     """Initialize a Fabric instance with the given seed and devices."""
-    fabric = Fabric(devices=devices, precision=precision)
+    strategy = "ddp_find_unused_parameters_true" if find_unused_parameters else "auto"
+    fabric = Fabric(devices=devices, precision=precision, strategy=strategy)
     fabric.seed_everything(seed)
     if not _is_using_cli():  # delegate launch call to CLI
         fabric.launch()

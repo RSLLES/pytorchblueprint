@@ -18,7 +18,11 @@ def train(cfg: DictConfig) -> float:
     # init
     cfgr = cfg.runtime
     utils.torch.initialize_torch(detect_anomaly=cfgr.detect_anomaly)
-    fabric = utils.fabric.initialize_fabric(cfgr.seed, precision=cfgr.precision)
+    fabric = utils.fabric.initialize_fabric(
+        cfgr.seed,
+        precision=cfgr.get("precision", "32-true"),
+        find_unused_parameters=cfgr.get("find_unused_parameters", False),
+    )
     cfg = utils.config.initialize_config(cfg)
 
     cfg = utils.config.add_git_commit_hash(cfg)
