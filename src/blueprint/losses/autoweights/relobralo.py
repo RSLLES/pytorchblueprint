@@ -1,6 +1,14 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+"""Implement the ReLoBRaLo weighting method, see [1].
+
+[1] Bischof, Rafael and Kraus, Michael A (2025).
+Multi-Objective Loss Balancing for Physics-Informed Deep Learning.
+Computer Methods in Applied Mechanics and Engineering.
+https://arxiv.org/abs/2110.09813
+"""
+
 import torch
 import torch.distributed as dist
 import torch.nn as nn
@@ -8,10 +16,7 @@ from torch import Tensor
 
 
 class ReLoBRaLo(nn.Module):
-    """Relative Loss Balancing with Random Lookback (Bischof & Kraus, 2022).
-
-    No extra backward passes — uses only loss values.
-    """
+    """Relative Loss Balancing with Random Lookback."""
 
     L0: Tensor
     L_prev: Tensor
@@ -24,7 +29,7 @@ class ReLoBRaLo(nn.Module):
         alpha: float = 0.999,
         beta: float = 0.999,
         temperature: float = 1.0,
-        eps: float = 1e-8,
+        eps: float = 1e-9,
     ) -> None:
         super().__init__()
         self.n_losses = n_losses
@@ -53,13 +58,12 @@ class ReLoBRaLo(nn.Module):
         return x
 
     def _balanced_weights(self, vals: Tensor, anchor: Tensor) -> Tensor:
-        """Compute λ_bal = m·softmax(L(t)/(T·L(t'))) per Eq. 11."""
+        """Compute m·softmax(L(t)/(T·L(t')))."""
         ratios = vals / (anchor + self.eps)
         return self.n_losses * torch.softmax(ratios / self.temperature, dim=0)
 
     @torch.compiler.disable
     def _update(self, vals: Tensor) -> Tensor:
-        # Sync losses across workers first so all subsequent computations are identical.
         synced = self._sync_avg(vals)
         if not self.initialized:
             self.L0.copy_(synced)
@@ -68,7 +72,6 @@ class ReLoBRaLo(nn.Module):
 
         w_bal_0 = self._balanced_weights(synced, self.L0)
         w_bal_prev = self._balanced_weights(synced, self.L_prev)
-        # Broadcast rho from rank 0: all workers must share the same lookback coin flip.
         rho = self._sync_bcast(
             torch.bernoulli(torch.full((), self.beta, device=vals.device))
         )
