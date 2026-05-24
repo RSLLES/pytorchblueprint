@@ -3,6 +3,7 @@
 
 batch_size: 64
 compile: true
+detect_divergence: true
 find_unused_parameters: false
 grad_clip_norm: 1.0
 n_accum_steps: 1

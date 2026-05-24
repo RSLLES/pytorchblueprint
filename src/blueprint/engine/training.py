@@ -32,7 +32,7 @@ def train(
     n_accum_steps: int = 1,
     patience: int = -1,
     grad_clip_norm: float | None = None,
-    enable_divergence_detection: bool = True,
+    detect_divergence: bool = True,
     enable_profiling: bool = False,
 ):
     """Train a model for n epochs."""
@@ -112,7 +112,7 @@ def train(
             break
 
         # divergence
-        if enable_divergence_detection and len(dl_train) != 0:
+        if detect_divergence and len(dl_train) != 0:
             loss_history.append(metrics["loss"])
             if utils.divergence.detect_divergence(loss_history):
                 if fabric.is_global_zero:

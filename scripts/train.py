@@ -104,6 +104,10 @@ def train(cfg: DictConfig) -> float:
     if fabric.is_global_zero:
         print(f"Log directory is {cfgr.log_dir}")
 
+    # training options
+    if not cfgr.detect_divergence and fabric.is_global_zero:
+        print("Warning: divergence detection is disabled.")
+
     # acceleration
     training_module, optimizer = fabric.setup(training_module, optimizer)
     dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
@@ -125,7 +129,7 @@ def train(cfg: DictConfig) -> float:
         n_accum_steps=cfgr.n_accum_steps,
         patience=cfgr.patience,
         watched_metric=cfgr.watched_metric,
-        enable_divergence_detection=cfgr.divergence_detection,
+        detect_divergence=cfgr.detect_divergence,
         enable_profiling=cfgr.profiling,
         grad_clip_norm=cfgr.grad_clip_norm,
     )
