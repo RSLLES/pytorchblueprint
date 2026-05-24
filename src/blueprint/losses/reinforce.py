@@ -65,20 +65,18 @@ class LOOReinforce(nn.Module):
         self.ensure_detached_loss = ensure_detached_loss
         self.eps = eps
 
-    @staticmethod
-    def _all_rolls(x: Tensor) -> Tensor:
-        return x.repeat(2).as_strided((x.size(0), x.size(0)), (1, 1))
-
     def forward(self, losses: Tensor, log_prob: Tensor):  # noqa: D102
         if losses.ndim != 1:
             raise ValueError(f"Expect 1D tensor for losses, got {losses.shape}")
         if losses.size(0) < 3:
-            raise ValueError(f"Expect more than 3 losses, got {losses.size(0)}")
+            raise ValueError(f"Expect at least 3 losses, got {losses.size(0)}")
+        N = losses.size(0)
 
         if self.ensure_detached_loss:
             losses = losses.detach()
 
-        loo = LOOReinforce._all_rolls(losses)[:, 1:]
+        rolls = losses.repeat(2).as_strided((N, N), (1, 1))
+        loo = rolls[:, 1:]
         std, mean = torch.std_mean(loo, dim=1)
         losses = (losses - mean) / (std + self.eps) * log_prob
         return losses.mean()
