@@ -12,12 +12,13 @@ reinforcement learning. Mach Learn 8, 229-256 (1992). https://doi.org/10.1007/BF
 baseline for free! ICLR, 2019. https://openreview.net/forum?id=r1lgTGL5DE
 """
 
+import torch
 from torch import Tensor, nn
 
 from blueprint.utils.ema import ExpMovingAverage
 
 
-class BaselineRLLossFunc(nn.Module):
+class BaselineReinforce(nn.Module):
     """REINFORCE loss function with the ema-baseline variance stabilizing trick [1]."""
 
     def __init__(
@@ -52,22 +53,32 @@ class BaselineRLLossFunc(nn.Module):
         return (advantage * log_prob).mean()
 
 
-class LOORLossFunc(nn.Module):
+class LOOReinforce(nn.Module):
     """REINFORCE loss function with the leave-one-out variance stabilizing trick [2]."""
 
-    def __init__(self, ensure_detached_loss: bool = True):
+    def __init__(
+        self,
+        ensure_detached_loss: bool = True,
+        eps: float = 1e-9,
+    ):
         super().__init__()
         self.ensure_detached_loss = ensure_detached_loss
+        self.eps = eps
 
-    def forward(self, loss: Tensor, log_prob: Tensor):  # noqa: D102
+    @staticmethod
+    def _all_rolls(x: Tensor) -> Tensor:
+        return x.repeat(2).as_strided((x.size(0), x.size(0)), (1, 1))
+
+    def forward(self, losses: Tensor, log_prob: Tensor):  # noqa: D102
+        if losses.ndim != 1:
+            raise ValueError(f"Expect 1D tensor for losses, got {losses.shape}")
+        if losses.size(0) < 3:
+            raise ValueError(f"Expect more than 3 losses, got {losses.size(0)}")
+
         if self.ensure_detached_loss:
-            loss = loss.detach()
-        loss = leave_one_out(loss) * log_prob
-        return loss.mean()
+            losses = losses.detach()
 
-
-def leave_one_out(y: Tensor) -> Tensor:
-    """Return y_k minus the mean of all other elements."""
-    if y.ndim != 1 or y.size(0) < 2:
-        raise ValueError("y must be a 1D tensor with at least two elements.")
-    return (y.size(0) * y - y.sum()) / (y.size(0) - 1)
+        loo = LOOReinforce._all_rolls(losses)[:, 1:]
+        std, mean = torch.std_mean(loo, dim=1)
+        losses = (losses - mean) / (std + self.eps) * log_prob
+        return losses.mean()

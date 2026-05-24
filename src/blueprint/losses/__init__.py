@@ -4,7 +4,7 @@
 from . import autoweights
 from .hyvarinen import HyvarinenLoss
 from .mmd import MMD, MMDRFF, MMDFuse, MMDLinear, MMDMax
-from .reinforce import BaselineRLLossFunc, LOORLossFunc
+from .reinforce import BaselineReinforce, LOOReinforce
 
 __all__ = [
     "autoweights",
@@ -14,6 +14,6 @@ __all__ = [
     "MMDFuse",
     "MMDLinear",
     "MMDMax",
-    "BaselineRLLossFunc",
-    "LOORLossFunc",
+    "BaselineReinforce",
+    "LOOReinforce",
 ]
