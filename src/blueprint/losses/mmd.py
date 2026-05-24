@@ -147,7 +147,7 @@ def rff_mmd(
     mu_x = torch.exp(1j * phase_x).mean(dim=1)
     mu_y = torch.exp(1j * phase_y).mean(dim=1)
     mmd_rff = (mu_x - mu_y).abs().square().mean(dim=1)
-    mmd_rff = mmd_rff.mean(dim=1)
+    mmd_rff = mmd_rff.amax(dim=1)
     return reduce(mmd_rff, dim=0, mode=reduction)
 
 

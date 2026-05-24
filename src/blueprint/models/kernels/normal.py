@@ -57,7 +57,5 @@ class NormalDistribution(nn.Module):
         """Sample RFF frequencies of shape ``[n_features, D, n_kernels]``."""
         D = z1.size(-1)
         bandwidths = self.compute_bandwidths(z1, z2)
-        w = torch.randn(
-            n_features, D, bandwidths.numel(), device=z1.device, dtype=z1.dtype
-        )
+        w = torch.randn(n_features, D, 1, device=z1.device, dtype=z1.dtype)
         return w / bandwidths
