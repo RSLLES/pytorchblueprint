@@ -8,11 +8,11 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
 from torchmetrics import MeanMetric
-from tqdm import tqdm
 
 from blueprint import utils
 from blueprint.metrics import LazyMetricCollection, MedianOfMeans
 from blueprint.utils import profiler
+from blueprint.utils.progress_bar import WrappedTextProgressBar
 
 
 @torch.enable_grad()
@@ -46,49 +46,39 @@ def train_one_epoch(
     )
 
     disable_stdout = not fabric.is_global_zero
-    with tqdm(
-        total=0, bar_format="{desc}", position=0, leave=False, disable=disable_stdout
-    ) as metrics_bar:
-        with tqdm(
-            total=n_steps, leave=False, position=1, disable=disable_stdout
-        ) as pbar:
-            with profiler.Profiler(disable=not enable_profiling) as prof:
-                for batch_idx, batch in enumerate(dl):
-                    is_accumulating = (batch_idx + 1) % n_accum_steps != 0
-                    batch["step"] = torch.tensor(step, device=fabric.device)
+    with WrappedTextProgressBar(total=n_steps, disable=disable_stdout) as bar:
+        with profiler.Profiler(disable=not enable_profiling) as prof:
+            for batch_idx, batch in enumerate(dl):
+                is_accumulating = (batch_idx + 1) % n_accum_steps != 0
+                batch["step"] = torch.tensor(step, device=fabric.device)
 
-                    with fabric.no_backward_sync(
-                        training_module, enabled=is_accumulating
-                    ):
-                        metrics = training_module(batch)
-                        fabric.backward(metrics["loss"] / n_accum_steps)
-                    step_metrics.update(metrics)
+                with fabric.no_backward_sync(training_module, enabled=is_accumulating):
+                    metrics = training_module(batch)
+                    fabric.backward(metrics["loss"] / n_accum_steps)
+                step_metrics.update(metrics)
 
-                    if is_accumulating:
-                        continue
+                if is_accumulating:
+                    continue
 
-                    metrics = step_metrics.compute()
+                metrics = step_metrics.compute()
 
-                    for opt in optimizers:
-                        if grad_clip_norm is not None:
-                            fabric.clip_gradients(
-                                training_module, opt, max_norm=grad_clip_norm
-                            )
-                        opt.step()
-                    for i, sche in enumerate(schedulers):
-                        metrics[f"lr{i}"] = sche.get_last_lr()[0]
-                        sche.step()
-                    for opt in optimizers:
-                        opt.zero_grad()
+                for opt in optimizers:
+                    if grad_clip_norm is not None:
+                        fabric.clip_gradients(
+                            training_module, opt, max_norm=grad_clip_norm
+                        )
+                    opt.step()
+                    opt.zero_grad()
+                for i, sche in enumerate(schedulers):
+                    metrics[f"lr{i}"] = sche.get_last_lr()[0]
+                    sche.step()
 
-                    metrics_bar.set_description_str(
-                        utils.format.format_metrics({"step": step} | metrics)
-                    )
-                    pbar.update(1)
-                    prof.step()
-                    step += 1
-                    step_metrics.reset()
-                    epoch_metrics.update(metrics)
+                bar.set_text(utils.format.format_metrics({"step": step} | metrics))
+                bar.update(1)
+                prof.step()
+                step += 1
+                step_metrics.reset()
+                epoch_metrics.update(metrics)
 
     if is_accumulating:
         for opt in optimizers:
