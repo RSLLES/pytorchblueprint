@@ -37,7 +37,8 @@ class ReservoirOnlineQuantile(Metric):
         )
 
     def compute(self) -> Tensor:  # noqa: D102
-        reservoir, _ = self._keep_largest(self.reservoir, self.keys)
+        reservoir = self.reservoir.reshape(-1, self.reservoir.size(-1))
+        reservoir, _ = self._keep_largest(reservoir, self.keys.reshape(-1))
         return torch.quantile(reservoir, self.q, dim=0)
 
     def _keep_largest(self, values: Tensor, keys: Tensor) -> tuple[Tensor, Tensor]:
