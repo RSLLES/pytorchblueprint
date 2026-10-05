@@ -71,7 +71,21 @@ def format_size(size: int, n_digits: int = 3) -> str:
     for unit in units:
         if size < 1024:
             break
-        size //= 1024
+        size /= 1024
     with warnings.catch_warnings():  # sigfig warns when x has less than n_digits
         warnings.filterwarnings("ignore", category=UserWarning)
         return round(size, sigfigs=n_digits, type=str) + unit
+
+
+def format_duration(seconds: float) -> str:
+    """Format a duration with its two largest units (3h42m, 12m30s, 45s)."""
+    units = [("d", 86400), ("h", 3600), ("m", 60), ("s", 1)]
+    remaining = int(seconds)
+    parts = []
+    for name, size in units:
+        value, remaining = divmod(remaining, size)
+        if value or parts:
+            parts.append(f"{value}{name}")
+        if len(parts) == 2:
+            break
+    return "".join(parts) or "0s"

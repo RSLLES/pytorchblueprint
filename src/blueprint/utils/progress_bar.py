@@ -3,8 +3,35 @@
 
 import shutil
 import textwrap
+import time
 
 from tqdm import tqdm
+
+from blueprint.utils import format
+
+
+class TrainingClock:
+    """Measure the run's step rate, ignoring the first step's one-off compile cost."""
+
+    def __init__(self, steps_left: int) -> None:
+        self.steps_left = steps_left
+        self._t_first_step: float | None = None
+        self._steps_timed = 0
+
+    def count_step(self, n: int = 1) -> None:
+        """Record n finished steps; the run's first one only starts the clock."""
+        self.steps_left -= n
+        if self._t_first_step is None:
+            self._t_first_step = time.monotonic()
+            n -= 1
+        self._steps_timed += n
+
+    def eta(self) -> str | None:
+        """Time left for the whole run, or None until a step has been timed."""
+        if self._t_first_step is None or self._steps_timed == 0:
+            return None
+        elapsed = time.monotonic() - self._t_first_step
+        return format.format_duration(elapsed / self._steps_timed * self.steps_left)
 
 
 class WrappedTextProgressBar:
@@ -15,9 +42,15 @@ class WrappedTextProgressBar:
     one-line-per-bar cursor bookkeeping stays correct however the text wraps.
     """
 
-    def __init__(self, total: int, disable: bool = False) -> None:
-        """Initialize a progress bar with optional disable flag."""
+    def __init__(
+        self,
+        total: int,
+        clock: TrainingClock | None = None,
+        disable: bool = False,
+    ) -> None:
+        """Initialize a progress bar, with an optional whole-run clock for the ETA."""
         self._disable = disable
+        self._clock = clock
         self._pbar = tqdm(total=total, position=0, leave=False)
         self._desc_bars: list[tqdm] = []
 
@@ -50,6 +83,13 @@ class WrappedTextProgressBar:
         if self._disable:
             return
         self._pbar.update(n)
+        if self._clock is None:
+            return
+        self._clock.count_step(n)
+        eta = self._clock.eta()
+        if eta is not None:
+            # refreshing here would render on every step, bypassing tqdm's mininterval
+            self._pbar.set_description_str(f"ETA {eta}", refresh=False)
 
     def __enter__(self) -> "WrappedTextProgressBar":
         return self

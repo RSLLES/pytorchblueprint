@@ -126,6 +126,7 @@ def train(cfg: DictConfig) -> float:
         begin_epoch=epoch,
         begin_step=step,
         n_epochs=cfgr.n_epochs,
+        total_steps=cfgr.total_steps,
         n_accum_steps=cfgr.n_accum_steps,
         patience=cfgr.patience,
         watched_metric=cfgr.watched_metric,

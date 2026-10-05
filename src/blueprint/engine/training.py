@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard.writer import SummaryWriter
 
 from blueprint import engine, utils
+from blueprint.utils.progress_bar import TrainingClock
 
 
 def train(
@@ -29,6 +30,7 @@ def train(
     begin_epoch: int = 0,
     begin_step: int = 0,
     n_epochs: int = -1,
+    total_steps: int = -1,
     n_accum_steps: int = 1,
     patience: int = -1,
     grad_clip_norm: float | None = None,
@@ -48,6 +50,7 @@ def train(
     n_epochs = n_epochs if n_epochs >= 0 else sys.maxsize**10
     path_last_ckpt, path_best_ckpt = utils.checkpoint.get_ckpts_path(log_dir)
     step = begin_step
+    clock = TrainingClock(steps_left=total_steps - step) if total_steps > 0 else None
 
     for epoch in range(begin_epoch, n_epochs):
         # train, validate
@@ -62,6 +65,7 @@ def train(
                 optimizers=optimizers,
                 schedulers=schedulers,
                 step=step,
+                clock=clock,
                 grad_clip_norm=grad_clip_norm,
                 training_module=training_module,
                 enable_profiling=enable_profiling,

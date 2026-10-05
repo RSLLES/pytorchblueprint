@@ -12,7 +12,7 @@ from torchmetrics import MeanMetric
 from blueprint import utils
 from blueprint.metrics import LazyMetricCollection, MedianOfMeans
 from blueprint.utils import profiler
-from blueprint.utils.progress_bar import WrappedTextProgressBar
+from blueprint.utils.progress_bar import TrainingClock, WrappedTextProgressBar
 
 
 @torch.enable_grad()
@@ -23,6 +23,7 @@ def train_one_epoch(
     optimizers: list[Optimizer],
     schedulers: list[LRScheduler],
     step: int,
+    clock: TrainingClock | None,
     grad_clip_norm: float | None,
     training_module: nn.Module,
     enable_profiling: bool,
@@ -46,7 +47,9 @@ def train_one_epoch(
     )
 
     disable_stdout = not fabric.is_global_zero
-    with WrappedTextProgressBar(total=n_steps, disable=disable_stdout) as bar:
+    with WrappedTextProgressBar(
+        total=n_steps, clock=clock, disable=disable_stdout
+    ) as bar:
         with profiler.Profiler(disable=not enable_profiling) as prof:
             for batch_idx, batch in enumerate(dl):
                 is_accumulating = (batch_idx + 1) % n_accum_steps != 0
