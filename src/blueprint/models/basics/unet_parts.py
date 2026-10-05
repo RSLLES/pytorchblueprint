@@ -18,10 +18,10 @@ class DoubleConv(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        mid_channels: int = None,
+        mid_channels: int | None = None,
         kernel_size: int = 3,
-        norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.ReLU,
+        norm_layer: type[nn.Module] = nn.BatchNorm2d,
+        act_layer: type[nn.Module] = nn.ReLU,
     ):
         super().__init__()
         mid_channels = out_channels if mid_channels is None else mid_channels
@@ -58,8 +58,8 @@ class Down(nn.Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.ReLU,
+        norm_layer: type[nn.Module] = nn.BatchNorm2d,
+        act_layer: type[nn.Module] = nn.ReLU,
     ):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
@@ -85,8 +85,8 @@ class Up(nn.Module):
         in_channels: int,
         out_channels: int,
         kernel_size: int = 3,
-        norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.ReLU,
+        norm_layer: type[nn.Module] = nn.BatchNorm2d,
+        act_layer: type[nn.Module] = nn.ReLU,
     ):
         super().__init__()
         self.up = nn.ConvTranspose2d(

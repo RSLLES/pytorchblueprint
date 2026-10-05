@@ -20,8 +20,8 @@ class UNet(nn.Module):
         out_channels: int,
         depth: int = 4,
         init_features: int = 64,
-        norm_layer: nn.Module = nn.BatchNorm2d,
-        act_layer: nn.Module = nn.ReLU,
+        norm_layer: type[nn.Module] = nn.BatchNorm2d,
+        act_layer: type[nn.Module] = nn.ReLU,
     ):
         super().__init__()
         self.inc = DoubleConv(

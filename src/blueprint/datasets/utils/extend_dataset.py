@@ -11,6 +11,10 @@ class ExtendDataset(Dataset):
 
     def __init__(self, ds: Dataset, length: int):
         super().__init__()
+        if len(ds) > length:
+            raise ValueError(
+                f"Cannot extend a dataset of length {len(ds)} to {length}."
+            )
         self.dataset = ds
         self.length = length
 
