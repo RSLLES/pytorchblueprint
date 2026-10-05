@@ -6,8 +6,8 @@
 import contextlib
 import sys
 
+from lightning.fabric import Fabric
 from lightning.fabric.connector import _is_using_cli
-from lightning_fabric import Fabric
 
 
 def initialize_fabric(

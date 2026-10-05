@@ -4,7 +4,7 @@
 import os
 import sys
 
-from lightning_fabric import Fabric
+from lightning.fabric import Fabric
 from matplotlib.figure import Figure
 from torch import Tensor, nn
 from torch.optim import Optimizer

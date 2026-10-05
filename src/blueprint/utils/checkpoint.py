@@ -5,7 +5,7 @@
 
 import os
 
-from lightning_fabric import Fabric
+from lightning.fabric import Fabric
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler

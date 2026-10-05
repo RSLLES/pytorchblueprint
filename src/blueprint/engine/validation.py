@@ -4,7 +4,7 @@
 import matplotlib.pyplot as plt
 import torch
 import torchmetrics
-from lightning_fabric import Fabric
+from lightning.fabric import Fabric
 from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm

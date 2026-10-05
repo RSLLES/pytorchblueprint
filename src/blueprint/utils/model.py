@@ -6,7 +6,7 @@
 from datetime import datetime
 
 import torch
-from lightning_fabric import Fabric
+from lightning.fabric import Fabric
 from torch import nn
 
 

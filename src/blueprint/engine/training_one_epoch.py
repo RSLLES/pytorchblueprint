@@ -2,7 +2,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import torch
-from lightning_fabric import Fabric
+from lightning.fabric import Fabric
 from torch import nn
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
