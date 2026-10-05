@@ -1,6 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+import operator
 import os
 import sys
 
@@ -24,7 +25,8 @@ def train(
     scheduler: LRScheduler | list[LRScheduler],
     dl_train: DataLoader,
     dl_val: DataLoader,
-    watched_metric: str,
+    watched_metric: str | None,
+    watched_metric_strategy: str,
     log_dir: str,
     cfg_str: str,
     begin_epoch: int = 0,
@@ -33,14 +35,27 @@ def train(
     total_steps: int = -1,
     n_accum_steps: int = 1,
     patience: int = -1,
+    val_stride: int = 1,
     grad_clip_norm: float | None = None,
     detect_divergence: bool = True,
     enable_profiling: bool = False,
 ):
     """Train a model for n epochs."""
     # init
+    watched_metric_strategy = utils.format.format_string(watched_metric_strategy)
+    if watched_metric_strategy not in ["min", "max"]:
+        raise ValueError(
+            "watched_metric_strategy must be 'min' or 'max', "
+            f"found {watched_metric_strategy}."
+        )
+    if watched_metric is None and (detect_divergence or patience > 0):
+        raise ValueError(
+            "detect_divergence and patience need a watched_metric: they rely on the "
+            "best checkpoint."
+        )
     best_epoch = begin_epoch
-    best_metric = float("-inf")
+    best_metric = float("-inf") if watched_metric_strategy == "max" else float("inf")
+    is_better = operator.ge if watched_metric_strategy == "max" else operator.le
 
     optimizers = [optimizer] if isinstance(optimizer, Optimizer) else optimizer
     schedulers = [scheduler] if isinstance(scheduler, LRScheduler) else scheduler
@@ -65,13 +80,15 @@ def train(
                 optimizers=optimizers,
                 schedulers=schedulers,
                 step=step,
+                total_steps=total_steps,
                 clock=clock,
                 grad_clip_norm=grad_clip_norm,
                 training_module=training_module,
                 enable_profiling=enable_profiling,
             )
-            val_metrics = engine.validate(fabric=fabric, model=model, dl=dl_val)
-            metrics = train_metrics | val_metrics
+            metrics = train_metrics
+            if should_validate(val_stride, epoch=epoch, n_epochs=n_epochs):
+                metrics |= engine.validate(fabric=fabric, model=model, dl=dl_val)
         except RuntimeError as error:
             if not utils.oom.is_oom(error):
                 raise
@@ -104,7 +121,9 @@ def train(
             scheduler=scheduler,
             model=training_module,
         )
-        if metrics[watched_metric] >= best_metric:
+        if watched_metric in metrics and is_better(
+            metrics[watched_metric], best_metric
+        ):
             best_epoch = epoch
             best_metric = metrics[watched_metric]
             utils.checkpoint.save_training(
@@ -139,3 +158,14 @@ def train(
                 loss_history = []
 
     return best_metric
+
+
+def should_validate(val_stride: int, epoch: int, n_epochs: int) -> bool:
+    """Validate every val_stride epochs and at the last one; never if 0, last if <0."""
+    if val_stride == 0:
+        return False
+    if epoch == n_epochs - 1:
+        return True
+    if val_stride < 0:
+        return False
+    return (epoch + 1) % val_stride == 0

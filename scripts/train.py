@@ -21,6 +21,7 @@ def train(cfg: DictConfig) -> float:
     fabric = utils.fabric.initialize_fabric(
         cfgr.seed,
         precision=cfgr.get("precision", "32-true"),
+        devices=cfgr.devices,
         find_unused_parameters=cfgr.get("find_unused_parameters", False),
     )
     cfg = utils.config.initialize_config(cfg)
@@ -51,7 +52,9 @@ def train(cfg: DictConfig) -> float:
     cfg = utils.config.add_total_steps(cfg, step_per_epoch=len(ds_train))
 
     # model
-    with fabric.init_module(empty_init="ckpt_path" in cfgr):
+    # a non-strict load leaves missing parameters as they were initialized
+    load_all = ("ckpt_path" in cfgr or "weights_path" in cfgr) and cfgr.strict_loading
+    with fabric.init_module(empty_init=load_all):
         model = instantiate(cfg.model)
         training_module = instantiate(cfg.trainer, model=model)
         optimizer = instantiate(cfg.optimizer, params=training_module.parameters())
@@ -74,6 +77,7 @@ def train(cfg: DictConfig) -> float:
             model=training_module,
             optimizer=optimizer,
             scheduler=scheduler,
+            strict=cfgr.strict_loading,
         )
         epoch += 1
         if fabric.is_global_zero:
@@ -85,6 +89,7 @@ def train(cfg: DictConfig) -> float:
             model=training_module,
             optimizer=None,
             scheduler=None,
+            strict=cfgr.strict_loading,
         )
         if fabric.is_global_zero:
             print(f"Weights loaded from {cfgr.weights_path}")
@@ -129,7 +134,9 @@ def train(cfg: DictConfig) -> float:
         total_steps=cfgr.total_steps,
         n_accum_steps=cfgr.n_accum_steps,
         patience=cfgr.patience,
+        val_stride=cfgr.val_stride,
         watched_metric=cfgr.watched_metric,
+        watched_metric_strategy=cfgr.watched_metric_strategy,
         detect_divergence=cfgr.detect_divergence,
         enable_profiling=cfgr.profiling,
         grad_clip_norm=cfgr.grad_clip_norm,

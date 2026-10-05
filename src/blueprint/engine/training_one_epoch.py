@@ -23,6 +23,7 @@ def train_one_epoch(
     optimizers: list[Optimizer],
     schedulers: list[LRScheduler],
     step: int,
+    total_steps: int,
     clock: TrainingClock | None,
     grad_clip_norm: float | None,
     training_module: nn.Module,
@@ -39,7 +40,11 @@ def train_one_epoch(
     for opt in optimizers:
         opt.zero_grad()
 
-    step_metrics = LazyMetricCollection(lambda: MeanMetric().to(device=fabric.device))
+    # the per-step values only drive the progress bar; syncing them would add one
+    # all-gather per metric per optimizer step
+    step_metrics = LazyMetricCollection(
+        lambda: MeanMetric(sync_on_compute=False).to(device=fabric.device)
+    )
     epoch_metrics = LazyMetricCollection(
         lambda: MedianOfMeans(n_groups=MedianOfMeans.recommended_n_groups(n_steps)).to(
             device=fabric.device
@@ -54,6 +59,11 @@ def train_one_epoch(
             for batch_idx, batch in enumerate(dl):
                 is_accumulating = (batch_idx + 1) % n_accum_steps != 0
                 batch["step"] = torch.tensor(step, device=fabric.device)
+                batch["n_batches"] = torch.tensor(
+                    len(dl) * fabric.world_size, device=fabric.device
+                )
+                progress = min(1.0, step / total_steps) if total_steps > 0 else 1.0
+                batch["progress"] = torch.tensor(progress, device=fabric.device)
 
                 with fabric.no_backward_sync(training_module, enabled=is_accumulating):
                     metrics = training_module(batch)

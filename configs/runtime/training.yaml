@@ -4,6 +4,7 @@
 batch_size: 64
 compile: true
 detect_divergence: true
+devices: auto
 find_unused_parameters: false
 grad_clip_norm: 1.0
 n_accum_steps: 1
@@ -11,4 +12,7 @@ n_epochs: 20
 n_workers: -1
 patience: -1
 seed: 0
+strict_loading: true
+val_stride: 1
 watched_metric: "loss"
+watched_metric_strategy: "min"

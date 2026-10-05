@@ -30,7 +30,7 @@ def load_training(
     model: Module,
     optimizer: Optimizer | list[Optimizer] | None,
     scheduler: LRScheduler | list[LRScheduler] | None,
-    strict: bool = False,
+    strict: bool = True,
 ) -> tuple[int, int]:
     """Load training module and optimizer states, returning epoch and step."""
     d = fabric.load(ckpt_path)
