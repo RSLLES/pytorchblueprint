@@ -6,7 +6,7 @@
 import torch
 from torch import nn
 
-from blueprint.utils import random
+from blueprint.utils import distributed, random
 
 
 class FlowMatchingTrainer(nn.Module):
@@ -16,6 +16,9 @@ class FlowMatchingTrainer(nn.Module):
         super().__init__()
         self.model = model
         self.register_buffer("seed", torch.tensor(seed, dtype=torch.int64))
+        # a plain attribute, not a buffer: DDP broadcasts buffers from rank 0 on
+        # every forward, which would undo the per-rank offset
+        self.rank = distributed.global_rank()
 
     def forward(self, x):
         """Compute one training step loss for a batch of distributions."""
@@ -23,7 +26,7 @@ class FlowMatchingTrainer(nn.Module):
         x1 = x["targetdist"]
 
         random.derive_new_seed_(self.seed)
-        gen = random.get_generator(self.seed)
+        gen = random.get_rank_generator(self.seed, self.rank)
         t = torch.rand((x0.size(0), 1), device=x0.device, dtype=x0.dtype, generator=gen)
 
         xt = t * x1 + (1.0 - t) * x0
