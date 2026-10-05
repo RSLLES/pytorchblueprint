@@ -75,7 +75,7 @@ def format_string(s: str) -> str:
     return s
 
 
-def format_size(size: int, n_digits: int = 3) -> str:
+def format_size(size: float, n_digits: int = 3) -> str:
     """Format a number of bytes into a readable string with size unit (KiB, ...)."""
     units = ["B", "KiB", "MiB", "GiB", "TiB"]
     for unit in units:

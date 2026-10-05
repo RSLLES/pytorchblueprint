@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from collections.abc import Sequence
+
 import torch
 from lightning.fabric import Fabric
 from matplotlib.figure import Figure
@@ -18,7 +20,7 @@ def predict(model: nn.Module, batch: dict[str, Tensor]) -> Tensor:
 
 @torch.no_grad()
 def validate(
-    fabric: Fabric, dl: DataLoader, model: nn.Module, evaluators: list[Evaluator]
+    fabric: Fabric, dl: DataLoader, model: nn.Module, evaluators: Sequence[Evaluator]
 ) -> dict[str, Tensor | Figure]:
     """Run every applicable evaluator over a single pass and merge their metrics."""
     model.eval()

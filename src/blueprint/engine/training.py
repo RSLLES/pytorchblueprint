@@ -4,6 +4,7 @@
 import operator
 import os
 import sys
+from collections.abc import Sequence
 
 from lightning.fabric import Fabric
 from matplotlib.figure import Figure
@@ -27,7 +28,7 @@ def train(
     scheduler: LRScheduler | list[LRScheduler],
     dl_train: DataLoader,
     dl_val: DataLoader,
-    evaluators: list[Evaluator],
+    evaluators: Sequence[Evaluator],
     watched_metric: str | None,
     watched_metric_strategy: str,
     log_dir: str,

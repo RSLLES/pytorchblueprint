@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any
+
 import pytest
 
 from blueprint import engine
@@ -20,7 +22,7 @@ def test_should_validate_follows_the_stride_and_keeps_the_last_epoch(
 
 
 def _train_with(**kwargs):
-    defaults = dict(
+    defaults: dict[str, Any] = dict(
         fabric=None,
         model=None,
         training_module=None,
