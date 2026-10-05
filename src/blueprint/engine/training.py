@@ -52,19 +52,27 @@ def train(
     for epoch in range(begin_epoch, n_epochs):
         # train, validate
         dl_train.dataset.increment_seed()
-        train_metrics, step = engine.train_one_epoch(
-            fabric=fabric,
-            dl=dl_train,
-            n_accum_steps=n_accum_steps,
-            optimizers=optimizers,
-            schedulers=schedulers,
-            step=step,
-            grad_clip_norm=grad_clip_norm,
-            training_module=training_module,
-            enable_profiling=enable_profiling,
-        )
-        val_metrics = engine.validate(fabric=fabric, model=model, dl=dl_val)
-        metrics = train_metrics | val_metrics
+        metrics = {}
+        local_oom = False
+        try:
+            train_metrics, step = engine.train_one_epoch(
+                fabric=fabric,
+                dl=dl_train,
+                n_accum_steps=n_accum_steps,
+                optimizers=optimizers,
+                schedulers=schedulers,
+                step=step,
+                grad_clip_norm=grad_clip_norm,
+                training_module=training_module,
+                enable_profiling=enable_profiling,
+            )
+            val_metrics = engine.validate(fabric=fabric, model=model, dl=dl_val)
+            metrics = train_metrics | val_metrics
+        except RuntimeError as error:
+            if not utils.oom.is_oom(error):
+                raise
+            local_oom = True
+        utils.oom.raise_on_any_rank_oom(fabric, local_oom)
 
         # log
         if fabric.is_global_zero:

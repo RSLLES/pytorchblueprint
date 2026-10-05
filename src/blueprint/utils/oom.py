@@ -6,7 +6,27 @@
 from functools import wraps
 
 import torch
+from lightning.fabric import Fabric
 from omegaconf import DictConfig
+
+
+class DistributedOutOfMemory(RuntimeError):
+    """At least one rank ran out of memory."""
+
+
+def is_oom(error: BaseException) -> bool:
+    """Report whether an exception is an out-of-memory failure."""
+    return "out of memory" in str(error) or "OOM" in str(error)
+
+
+def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool) -> None:
+    """Turn a one-rank OOM into an every-rank one, so the retry stays collective."""
+    # a rank that retries alone leaves the others waiting on collectives it will never
+    # issue, which surfaces half an hour later as an NCCL timeout with no OOM in sight
+    votes = torch.tensor(float(local_oom), device=fabric.device)
+    n_oom = int(fabric.all_reduce(votes, reduce_op="sum"))
+    if n_oom > 0:
+        raise DistributedOutOfMemory(f"out of memory on {n_oom} of the ranks.")
 
 
 def handle_oom(cfg_attr_name="cfg"):
@@ -30,9 +50,7 @@ def handle_oom(cfg_attr_name="cfg"):
                 try:
                     return func(*args, **kwargs)
                 except RuntimeError as e:
-                    oom = "out of memory" in str(e)
-                    oom = oom or "OOM" in str(e)
-                    if not oom:
+                    if not is_oom(e):
                         raise
                     if cfgr.batch_size == 1:
                         print(
