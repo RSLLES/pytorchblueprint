@@ -16,6 +16,8 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from blueprint import engine, utils
 from blueprint.utils.progress_bar import TrainingClock
 
+from .evaluators import Evaluator
+
 
 def train(
     fabric: Fabric,
@@ -25,6 +27,7 @@ def train(
     scheduler: LRScheduler | list[LRScheduler],
     dl_train: DataLoader,
     dl_val: DataLoader,
+    evaluators: list[Evaluator],
     watched_metric: str | None,
     watched_metric_strategy: str,
     log_dir: str,
@@ -88,7 +91,9 @@ def train(
             )
             metrics = train_metrics
             if should_validate(val_stride, epoch=epoch, n_epochs=n_epochs):
-                metrics |= engine.validate(fabric=fabric, model=model, dl=dl_val)
+                metrics |= engine.validate(
+                    fabric=fabric, model=model, dl=dl_val, evaluators=evaluators
+                )
         except RuntimeError as error:
             if not utils.oom.is_oom(error):
                 raise

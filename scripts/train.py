@@ -109,6 +109,9 @@ def train(cfg: DictConfig) -> float:
     if fabric.is_global_zero:
         print(f"Log directory is {cfgr.log_dir}")
 
+    # metrics
+    evaluators = [engine.WassersteinEvaluator(), engine.ScatterPlotEvaluator()]
+
     # training options
     if not cfgr.detect_divergence and fabric.is_global_zero:
         print("Warning: divergence detection is disabled.")
@@ -126,6 +129,7 @@ def train(cfg: DictConfig) -> float:
         training_module=training_module,
         dl_train=dl_train,
         dl_val=dl_val,
+        evaluators=evaluators,
         log_dir=cfgr.log_dir,
         cfg_str=utils.config.dump_config(cfg),
         begin_epoch=epoch,

@@ -1,53 +1,44 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-import matplotlib.pyplot as plt
 import torch
-import torchmetrics
 from lightning.fabric import Fabric
-from torch import nn
+from matplotlib.figure import Figure
+from torch import Tensor, nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from blueprint.metrics import WassersteinDistance
+from .evaluators import Evaluator
+
+
+def predict(model: nn.Module, batch: dict[str, Tensor]) -> Tensor:
+    """Run the model on a validation batch; the one place tied to the batch layout."""
+    return model(batch["sourcedist"])
 
 
 @torch.no_grad()
-def validate(fabric: Fabric, dl: DataLoader, model: nn.Module):
-    """Compute validation metrics given a model for one dataset."""
-    source, result, target = (
-        torchmetrics.CatMetric(),
-        torchmetrics.CatMetric(),
-        torchmetrics.CatMetric(),
-    )
-    distance = WassersteinDistance(p=1.0)
+def validate(
+    fabric: Fabric, dl: DataLoader, model: nn.Module, evaluators: list[Evaluator]
+) -> dict[str, Tensor | Figure]:
+    """Run every applicable evaluator over a single pass and merge their metrics."""
     model.eval()
-    for batch in tqdm(dl, leave=False, desc="val", disable=not fabric.is_global_zero):
-        x_source = batch["sourcedist"]
-        x_target = batch["targetdist"]
-        x_pred = model(x_source)
-        source.update(x_source)
-        target.update(x_target)
-        result.update(x_pred)
-        distance.update(x_pred, x_target)
+    for evaluator in evaluators:
+        evaluator.prepare(fabric, dl, model)
+        evaluator.reset()
 
-    x_source = source.compute().cpu().numpy()
-    x_target = target.compute().cpu().numpy()
-    x_res = result.compute().cpu().numpy()
-    emd = distance.compute()
+    applicable = []
+    for batch_idx, batch in enumerate(
+        tqdm(dl, leave=False, desc="val", disable=not fabric.is_global_zero)
+    ):
+        if batch_idx == 0:
+            applicable = [
+                e for e in evaluators if all(k in batch for k in e.REQUIRED_KEYS)
+            ]
+        output = predict(model, batch)
+        for evaluator in applicable:
+            evaluator.update(output, batch)
 
-    fig = None
-    if fabric.is_global_zero:
-        plt.clf()
-        fig, axs = plt.subplots(1, 3, figsize=(12, 4))
-        axs[0].scatter(x_source[:, 0], x_source[:, 1], color="blue", alpha=0.5)
-        axs[0].set_title("Source")
-        axs[0].set_aspect("equal")
-        axs[1].scatter(x_res[:, 0], x_res[:, 1], color="red", alpha=0.5)
-        axs[1].set_title("Results")
-        axs[1].set_aspect("equal")
-        axs[2].scatter(x_target[:, 0], x_target[:, 1], color="orange", alpha=0.5)
-        axs[2].set_title("Target")
-        axs[2].set_aspect("equal")
-        fig.tight_layout()
-    return {"earth_mover_dist": emd, "fig": fig}
+    metrics = {}
+    for evaluator in applicable:
+        metrics |= {f"val/{k}": v for k, v in evaluator.compute().items()}
+    return metrics

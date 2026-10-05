@@ -28,6 +28,7 @@ def _train_with(**kwargs):
         scheduler=[],
         dl_train=None,
         dl_val=None,
+        evaluators=[],
         log_dir="",
         cfg_str="",
         watched_metric="loss",
