@@ -3,8 +3,19 @@
 # LICENSE file in the root directory of this source tree.
 
 display_help_and_exit() {
-	echo "Usage: ./multinode.sh --n_nodes=X --node_rank=X --n_devices=X [--main_address=X] -- <COMMAND>"
+	echo "Usage: ./multinode.sh --n_nodes=X --node_rank=X --n_devices=X [--main_address=<ip|file>] [--timeout=<seconds>] -- <COMMAND> (uv run is implicit)"
 	exit 1
+}
+
+read_first_ip() {
+	local path="$1"
+	local ip
+	ip=$(grep -m1 -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' "$path")
+	if [[ -z "$ip" ]]; then
+		echo "Error: no IP address found in $path" >&2
+		exit 1
+	fi
+	echo "$ip"
 }
 
 CURRENT_IP=$(hostname -I | awk '{print $1}')
@@ -14,6 +25,7 @@ N_NODES=""
 NODE_RANK=""
 N_DEVICES=""
 MAIN_ADDRESS=""
+TIMEOUT="1800"
 CMD_ARGS=""
 
 while [[ $# -gt 0 ]]; do
@@ -34,6 +46,10 @@ while [[ $# -gt 0 ]]; do
 		MAIN_ADDRESS="${1#*=}"
 		shift
 		;;
+	--timeout=*)
+		TIMEOUT="${1#*=}"
+		shift
+		;;
 	--)
 		shift
 		CMD_ARGS="$@"
@@ -50,6 +66,11 @@ if [[ -z "$N_NODES" ]] || [[ -z "$NODE_RANK" ]] || [[ -z "$N_DEVICES" ]] || [[ -
 fi
 
 # MAIN_ADDRESS logic
+if [[ -f "$MAIN_ADDRESS" ]]; then
+	MAIN_ADDRESS=$(read_first_ip "$MAIN_ADDRESS") || exit 1
+	echo "Main node IP: $MAIN_ADDRESS"
+fi
+
 if [[ "$NODE_RANK" == "0" ]]; then
 	if [[ -z "$MAIN_ADDRESS" ]]; then
 		MAIN_ADDRESS="$CURRENT_IP"
@@ -60,6 +81,9 @@ else
 		exit 1
 	fi
 fi
+
+# torchrun reads PET_<ARG> as the default for flags fabric's CLI does not forward
+export PET_RDZV_CONF="timeout=$TIMEOUT"
 
 exec uv run python -m lightning.fabric.cli \
 	--devices "$N_DEVICES" \
