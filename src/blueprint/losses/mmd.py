@@ -29,6 +29,7 @@ https://arxiv.org/abs/2502.20755
 
 import torch
 from torch import Tensor, nn
+from torch.utils.checkpoint import checkpoint
 
 from blueprint.utils.torch import reduce
 
@@ -133,20 +134,26 @@ def linear_mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tenso
     return reduce(mmd_linear_sq, dim=0, mode=reduction)
 
 
+def _empirical_char_function(z: Tensor, w: Tensor) -> tuple[Tensor, Tensor]:
+    """Return the real and imaginary parts of the empirical characteristic function."""
+    phase = torch.einsum("bnd,rdk->bnrk", z, w)
+    return phase.cos().mean(dim=1), phase.sin().mean(dim=1)
+
+
 def rff_mmd(
     x: Tensor, y: Tensor, dist: nn.Module, n_features: int, reduction: str
 ) -> Tensor:
-    """Implement RFF MDD."""
+    """Implement RFF MMD."""
     if x.ndim != 3 or y.ndim != 3:
         raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
     if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
         raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
     w = dist(x, y, n_features=n_features)
-    phase_x = torch.einsum("bnd,rdk->bnrk", x, w)
-    phase_y = torch.einsum("bnd,rdk->bnrk", y, w)
-    mu_x = torch.exp(1j * phase_x).mean(dim=1)
-    mu_y = torch.exp(1j * phase_y).mean(dim=1)
-    mmd_rff = (mu_x - mu_y).abs().square().mean(dim=1)
+    # torch.compile requires cos/sin rather than exp(1j.)
+    # checkpointing frees [B, N, R, K] tensors (cheap to compute)
+    cos_x, sin_x = checkpoint(_empirical_char_function, x, w, use_reentrant=False)
+    cos_y, sin_y = checkpoint(_empirical_char_function, y, w, use_reentrant=False)
+    mmd_rff = ((cos_x - cos_y).square() + (sin_x - sin_y).square()).mean(dim=1)
     mmd_rff = mmd_rff.amax(dim=1)
     return reduce(mmd_rff, dim=0, mode=reduction)
 
