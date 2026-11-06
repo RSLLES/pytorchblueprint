@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Flowmatching training step."""
+"""Score matching training step."""
 
 from torch import Tensor, nn
 
@@ -16,7 +16,7 @@ class ScoreMatchingTrainer(nn.Module):
         self.model = model
         self.loss_func = HyvarinenLoss()
 
-    def forward(self, x: Tensor) -> dict[str, Tensor]:
-        """Compute one training step loss for a batch of distributions."""
-        loss = self.loss_func(score_net=self.model, x=x)
+    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
+        """Compute the score matching loss on a batch of target samples."""
+        loss = self.loss_func(score_net=self.model, x=batch["targetdist"])
         return {"loss": loss}

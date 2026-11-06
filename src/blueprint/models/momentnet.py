@@ -7,7 +7,7 @@ from .basics import FourierEmbeddings, ResnetBlocks
 
 
 class MomentNet(nn.Module):
-    """Toy model that learns a input_dim-D  function."""
+    """Toy model that maps input_dim-D points to output_dim-D points."""
 
     def __init__(
         self,

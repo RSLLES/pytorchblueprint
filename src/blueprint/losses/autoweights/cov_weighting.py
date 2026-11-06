@@ -10,8 +10,13 @@ from torch import Tensor, nn
 class CoVWeighting(nn.Module):
     """Compute dynamic loss weighting based on coefficient of variation."""
 
+    t: Tensor
+    mu_L: Tensor
+    mu_l: Tensor
+    M: Tensor
+
     def __init__(self, n_losses: int, eps: float = 1e-12, t_lim: int = 1000):
-        super(CoVWeighting, self).__init__()
+        super().__init__()
         self.eps = eps
         self.n_losses = n_losses
         self.t_lim = t_lim
@@ -46,7 +51,6 @@ class CoVWeighting(nn.Module):
         if self.t < self.t_lim:
             self.t += 1.0
         lambd = 1.0 / self.t
-        # lambd = 1.0 / torch.sqrt(self.t)
 
         mu_L = (1.0 - lambd) * self.mu_L + lambd * L
         mu_l = (1.0 - lambd) * self.mu_l + lambd * l

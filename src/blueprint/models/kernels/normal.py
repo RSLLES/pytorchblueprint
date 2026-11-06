@@ -8,6 +8,8 @@ from torch import Tensor, nn
 
 from blueprint.utils.ema import ExpMovingAverage
 
+from .exponential import quantile_bandwidths
+
 
 class NormalDistribution(nn.Module):
     """Normal sampler with multi-bandwidth scaling for RFF features.
@@ -47,11 +49,14 @@ class NormalDistribution(nn.Module):
         z1_sub = self._subsample(z1)
         z2_sub = self._subsample(z2)
         dists = torch.cdist(z1_sub, z2_sub, p=2.0)
-        dists_no_zeros = torch.where(dists > self.eps, dists, float("nan"))
-        q05, q95 = torch.nanquantile(dists_no_zeros, self.quantiles)
-        q05, q95 = self.ema_q05(q05), self.ema_q95(q95)
-        low, high = 0.5 * q05, 2.0 * q95
-        return (high - low) * self.uniform_grid + low
+        return quantile_bandwidths(
+            dists,
+            self.quantiles,
+            self.uniform_grid,
+            self.ema_q05,
+            self.ema_q95,
+            self.eps,
+        )
 
     def forward(self, z1: Tensor, z2: Tensor, n_features: int) -> Tensor:
         """Sample RFF frequencies of shape ``[n_features, D, n_kernels]``."""

@@ -4,7 +4,7 @@
 from .lazy_collection import LazyMetricCollection
 from .median_of_means import MedianOfMeans
 from .quantile import KLLOnlineQuantile
-from .wassertein_distance import WassersteinDistance
+from .wasserstein_distance import WassersteinDistance
 
 __all__ = [
     "LazyMetricCollection",

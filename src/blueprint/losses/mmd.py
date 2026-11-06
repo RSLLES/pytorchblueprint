@@ -34,61 +34,54 @@ from torch.utils.checkpoint import checkpoint
 from blueprint.utils.torch import reduce
 
 
-def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
-    """Return the (biased) MMD between x and y given a kernel."""
+def _check_inputs(x: Tensor, y: Tensor, min_samples: int = 2) -> None:
     if x.ndim != 3 or y.ndim != 3:
         raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
     if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
         raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
-    if x.size(1) < 2 or y.size(1) < 2:
+    if x.size(1) < min_samples or y.size(1) < min_samples:
         raise ValueError(
-            f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
+            f"MMD needs at least {min_samples} samples per batch, "
+            f"got x:{x.size(1)}, y:{y.size(1)}."
         )
+
+
+def _mmd_sq(K: Tensor, n: int) -> Tensor:
+    """Biased squared MMD from the kernel matrix of [x; y], x holding n samples."""
+    K_xx = K[:, :n, :n].mean(dim=(1, 2))
+    K_yy = K[:, n:, n:].mean(dim=(1, 2))
+    K_xy = K[:, :n, n:].mean(dim=(1, 2))
+    return K_xx + K_yy - 2.0 * K_xy
+
+
+def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
+    """Return the (biased) MMD between x and y given a kernel."""
+    _check_inputs(x, y)
 
     N = x.size(1)
     xy = torch.cat([x, y], dim=1)
     K = kernel(xy, xy, reduction="mean")
 
-    K_xx = K[:, :N, :N].mean(dim=(1, 2))
-    K_yy = K[:, N:, N:].mean(dim=(1, 2))
-    K_xy = K[:, :N, N:].mean(dim=(1, 2))
-    mmd_sq = K_xx + K_yy - 2.0 * K_xy
+    mmd_sq = _mmd_sq(K, N)
     return reduce(mmd_sq, dim=0, mode=reduction)
 
 
 def mmd_max(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     """Return the maximal (biased) MMD between x and y given multiple kernels."""
-    if x.ndim != 3 or y.ndim != 3:
-        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
-    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
-        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
-    if x.size(1) < 2 or y.size(1) < 2:
-        raise ValueError(
-            f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
-        )
+    _check_inputs(x, y)
 
     N = x.size(1)
     xy = torch.cat([x, y], dim=1)
     K = kernel(xy, xy, reduction="none")
 
-    K_xx = K[:, :N, :N].mean(dim=(1, 2))
-    K_yy = K[:, N:, N:].mean(dim=(1, 2))
-    K_xy = K[:, :N, N:].mean(dim=(1, 2))
-    mmd_sq = K_xx + K_yy - 2.0 * K_xy
+    mmd_sq = _mmd_sq(K, N)
     mmd_sq = mmd_sq.amax(dim=-1)
     return reduce(mmd_sq, dim=0, mode=reduction)
 
 
 def mmd_fuse(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     """Implement MMD-Fuse, see [2]."""
-    if x.ndim != 3 or y.ndim != 3:
-        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
-    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
-        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
-    if x.size(1) < 2 or y.size(1) < 2:
-        raise ValueError(
-            f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
-        )
+    _check_inputs(x, y)
 
     N = x.size(1)
     xy = torch.cat([x, y], dim=1)
@@ -96,10 +89,7 @@ def mmd_fuse(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     n_kernels = torch.tensor(K.size(-1), device=K.device, dtype=K.dtype)
     lambd = torch.sqrt(n_kernels * (n_kernels - 1.0))
 
-    K_xx = K[:, :N, :N].mean(dim=(1, 2))
-    K_yy = K[:, N:, N:].mean(dim=(1, 2))
-    K_xy = K[:, :N, N:].mean(dim=(1, 2))
-    mmd_sq = K_xx + K_yy - 2.0 * K_xy
+    mmd_sq = _mmd_sq(K, N)
 
     std = K.square().mean(dim=(1, 2)).sqrt()
     mmd_norm = mmd_sq / (std + 1e-9)
@@ -108,15 +98,8 @@ def mmd_fuse(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
 
 
 def linear_mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
-    """Return the mean MMD between x and y given multiple kernels."""
-    if x.ndim != 3 or y.ndim != 3:
-        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
-    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
-        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
-    if x.size(1) < 2 or y.size(1) < 2:
-        raise ValueError(
-            f"MMD needs at least 2 samples per batch, got x:{x.size(1)}, y:{y.size(1)}."
-        )
+    """Return the linear-time MMD estimate, maximized over kernels."""
+    _check_inputs(x, y)
 
     N = min(x.size(1), y.size(1))
     N = N - (N % 2)
@@ -144,10 +127,7 @@ def rff_mmd(
     x: Tensor, y: Tensor, dist: nn.Module, n_features: int, reduction: str
 ) -> Tensor:
     """Implement RFF MMD."""
-    if x.ndim != 3 or y.ndim != 3:
-        raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
-    if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):
-        raise ValueError(f"Batch or feature dim size mismatch: {x.shape} vs {y.shape}.")
+    _check_inputs(x, y, min_samples=1)
     w = dist(x, y, n_features=n_features)
     # torch.compile requires cos/sin rather than exp(1j.)
     # checkpointing frees [B, N, R, K] tensors (cheap to compute)
@@ -171,7 +151,7 @@ class MMD(nn.Module):
 
 
 class MMDMax(nn.Module):
-    """Batchified MMD."""
+    """Batchified MMD, maximized over the kernels of a multi-kernel."""
 
     def __init__(self, kernel: nn.Module, reduction: str = "mean"):
         super().__init__()

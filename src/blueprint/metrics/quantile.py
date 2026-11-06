@@ -2,14 +2,16 @@
 # LICENSE file in the root directory of this source tree.
 
 from math import ceil
-from typing import Any
 
 import torch
 from torch import Tensor
+from torch.distributed import ProcessGroup
 from torchmetrics import Metric
 
 
-def _gather_and_concatenate(x: Tensor, group: Any = None) -> list[Tensor]:
+def _gather_and_concatenate(
+    x: Tensor, group: ProcessGroup | None = None
+) -> list[Tensor]:
     """Gather a state whose length differs per rank, as one already-merged tensor."""
     world_size = torch.distributed.get_world_size(group)
     x = x.contiguous()
@@ -20,7 +22,7 @@ def _gather_and_concatenate(x: Tensor, group: Any = None) -> list[Tensor]:
     padded[: x.size(0)] = x
     gathered = [torch.empty_like(padded) for _ in range(world_size)]
     torch.distributed.all_gather(gathered, padded, group=group)
-    return [torch.cat([g[: int(n)] for g, n in zip(gathered, sizes)])]
+    return [torch.cat([g[: int(n)] for g, n in zip(gathered, sizes, strict=True)])]
 
 
 class KLLOnlineQuantile(Metric):
@@ -32,7 +34,7 @@ class KLLOnlineQuantile(Metric):
 
     def __init__(
         self,
-        channel_dim: int = 1,
+        n_channels: int = 1,
         q: float | tuple[float, ...] | list[float] = 0.5,
         k: int = 256,
         c: float = 2 / 3,
@@ -42,7 +44,7 @@ class KLLOnlineQuantile(Metric):
         self.k = k
         self.c = c
         self.add_state(
-            "values", default=torch.empty(0, channel_dim), dist_reduce_fx="cat"
+            "values", default=torch.empty(0, n_channels), dist_reduce_fx="cat"
         )
         self.add_state(
             "levels", default=torch.empty(0, dtype=torch.long), dist_reduce_fx="cat"

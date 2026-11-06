@@ -4,13 +4,15 @@
 """Flowmatching training step."""
 
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from blueprint.utils import distributed, random
 
 
 class FlowMatchingTrainer(nn.Module):
     """Train a model with flowmatching."""
+
+    seed: Tensor
 
     def __init__(self, model: nn.Module, seed: int):
         super().__init__()
@@ -20,10 +22,10 @@ class FlowMatchingTrainer(nn.Module):
         # every forward, which would undo the per-rank offset
         self.rank = distributed.global_rank()
 
-    def forward(self, x):
+    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
         """Compute one training step loss for a batch of distributions."""
-        x0 = x["sourcedist"]
-        x1 = x["targetdist"]
+        x0 = batch["sourcedist"]
+        x1 = batch["targetdist"]
 
         random.derive_new_seed_(self.seed)
         gen = random.get_rank_generator(self.seed, self.rank)

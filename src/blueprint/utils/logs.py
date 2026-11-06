@@ -19,17 +19,9 @@ def _get_next_version(root_path: str, prefix: str) -> int:
     """Return the next integer version number for the given prefix."""
     if not os.path.exists(root_path):
         return 0
-    last = -1
-    pattern = rf"\b{re.escape(prefix)}(\d+)\b"
-    dirs = os.listdir(root_path)
-    for dir in dirs:
-        matches = re.findall(pattern, dir)
-        if not matches:
-            continue
-        version = int(matches[0])
-        last = version if version > last else last
-    next = last + 1
-    return next
+    pattern = re.compile(rf"\b{re.escape(prefix)}(\d+)\b")
+    matches = (pattern.search(name) for name in os.listdir(root_path))
+    return max((int(m[1]) for m in matches if m), default=-1) + 1
 
 
 def write_file(content: str, filename: str, log_dir: str) -> None:

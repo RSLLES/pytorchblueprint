@@ -1,13 +1,17 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from collections.abc import Callable
+
 import torch
 from torch import Tensor, nn
 
 from .basics import FourierEmbeddings, ResnetBlocks
 
 
-def langevin_step(score_fn: callable, x: Tensor, step_size: float) -> Tensor:
+def langevin_step(
+    score_fn: Callable[[Tensor], Tensor], x: Tensor, step_size: float
+) -> Tensor:
     """Perform one step of Unadjusted Langevin Dynamics."""
     score = score_fn(x)
     noise = torch.randn_like(x)
@@ -15,7 +19,7 @@ def langevin_step(score_fn: callable, x: Tensor, step_size: float) -> Tensor:
 
 
 def langevin_dynamics(
-    score_fn: callable, x0: Tensor, n_steps: int, step_size: float
+    score_fn: Callable[[Tensor], Tensor], x0: Tensor, n_steps: int, step_size: float
 ) -> Tensor:
     """Integrate using Langevin Dynamics starting from x0."""
     x = x0
@@ -25,7 +29,7 @@ def langevin_dynamics(
 
 
 class ScoreNet(nn.Module):
-    """Toy model that learns a input_dim-D score function."""
+    """Toy model that learns an input_dim-D score function."""
 
     def __init__(
         self,
@@ -47,7 +51,7 @@ class ScoreNet(nn.Module):
         self.step_size = step_size
 
     def forward_single_pass(self, x: Tensor) -> Tensor:
-        """Perform a single step."""
+        """Return the predicted score at x."""
         x_shape = x.shape
         x_flat = x.reshape(-1, x.size(-1))
         outputs_flat = self.head(self.body(self.embed(x_flat)))

@@ -33,8 +33,8 @@ def build_dl(
         shuffle=shuffle,
         pin_memory=True,
         drop_last=False,
-        # incompatible with utils.training.handle_oom():  OSError: Too many open files
-        # persistent_workers=n_workers > 0,
+        # persistent workers do not survive utils.oom.handle_oom's retries:
+        # OSError: Too many open files
         persistent_workers=False,
     )
     return dl

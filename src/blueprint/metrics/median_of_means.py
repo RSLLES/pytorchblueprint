@@ -16,7 +16,7 @@ from blueprint.utils.random import get_generator
 class MedianOfMeans(Metric):
     """Median of means estimator over a stream of scalar values."""
 
-    full_state_update: bool = False
+    full_state_update = False
     sums: Tensor
     counts: Tensor
 

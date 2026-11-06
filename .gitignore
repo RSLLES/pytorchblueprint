@@ -7,3 +7,4 @@ exports/**
 outputs/**
 profile/**
 uv.lock
+traces/**

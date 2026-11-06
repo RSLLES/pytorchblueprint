@@ -7,9 +7,13 @@ import torch
 import torch.distributed as dist
 from torch import Tensor, nn
 
+from blueprint.utils.distributed import is_distributed
+
 
 class L2UncertaintyWeighting(nn.Module):
     """Compute a weighted sum of L2 losses with learnt uncertainties."""
+
+    initialized: Tensor
 
     def __init__(self, n_losses: int, eps: float = 1e-9):
         super().__init__()
@@ -24,7 +28,7 @@ class L2UncertaintyWeighting(nn.Module):
     def initialize(self, losses: Tensor):
         """Initialize log_sigma once at the first pass."""
         init = 0.5 * torch.log(losses + self.eps)
-        if dist.is_initialized():
+        if is_distributed():
             dist.broadcast(init, src=0)
         self.log_sigma.copy_(init)
         self.initialized.fill_(True)

@@ -6,7 +6,7 @@ defaults:
   - dataset@ds_val: gaussian2spiral
   - dataset@ds_test: gaussian2spiral
   - runtime: training
-  - trainer: wasserteinmatching
+  - trainer: wassersteinmatching
   - optimizer: adamw
   - scheduler: cosineannealing
   - model: momentnet
@@ -35,5 +35,5 @@ optimizer:
   lr: 0.003
 
 runtime:
-  name: wasserteinmatching
+  name: wassersteinmatching
   batch_size: 512

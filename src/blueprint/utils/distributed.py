@@ -9,7 +9,6 @@ returns before reaching them, so a compiled graph stays unbroken on one GPU.
 
 import torch
 import torch.distributed as dist
-import torch.distributed._functional_collectives as funcol
 from torch import Tensor
 
 
@@ -30,16 +29,6 @@ def _all_reduce(x: Tensor, op: dist.ReduceOp) -> Tensor:
     return x
 
 
-@torch.compiler.disable()
-def _all_reduce_with_grad(x: Tensor) -> Tensor:
-    return funcol.all_reduce(x, "avg", dist.group.WORLD)
-
-
 def reduce_across_ranks(x: Tensor, op: dist.ReduceOp = dist.ReduceOp.AVG) -> Tensor:
     """Combine a gradient-free statistic so every rank reads the same value."""
     return _all_reduce(x, op) if is_distributed() else x
-
-
-def mean_across_ranks(x: Tensor) -> Tensor:
-    """Average a differentiable statistic, carrying the gradient back to every rank."""
-    return _all_reduce_with_grad(x) if is_distributed() else x

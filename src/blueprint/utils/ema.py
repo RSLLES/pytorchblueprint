@@ -4,8 +4,9 @@
 """Implement a multi-GPU and compilation friendly exponential moving average."""
 
 import torch
-import torch.distributed as dist
 from torch import Tensor, nn
+
+from blueprint.utils.distributed import reduce_across_ranks
 
 
 class ExpMovingAverage(nn.Module):
@@ -21,15 +22,8 @@ class ExpMovingAverage(nn.Module):
         self.register_buffer("is_initialized", torch.tensor(False, dtype=torch.bool))
 
     @torch.compiler.disable
-    def _sync_values(self, x: Tensor) -> Tensor:
-        if dist.is_available() and dist.is_initialized():
-            x = x.clone()
-            dist.all_reduce(x, op=dist.ReduceOp.AVG)
-        return x
-
-    @torch.compiler.disable
     def _initialize_buffer(self, x: Tensor):
-        x_synced = self._sync_values(x)
+        x_synced = reduce_across_ranks(x)
         self.mean.copy_(x_synced)
         self.is_initialized.fill_(True)
 
@@ -39,7 +33,7 @@ class ExpMovingAverage(nn.Module):
         if not self.is_initialized:
             self._initialize_buffer(x)
             return
-        x_synced = self._sync_values(x)
+        x_synced = reduce_across_ranks(x)
         self.mean.mul_(1.0 - self.lambd).add_(x_synced, alpha=self.lambd)
 
     def value(self) -> Tensor:

@@ -4,6 +4,7 @@
 """Utility functions to profile models."""
 
 import os
+import sys
 from datetime import datetime
 
 import torch
@@ -15,12 +16,11 @@ class Profiler:
     def __init__(
         self, dirpath="traces/", disable: bool = False, exit_when_done: bool = True
     ):
-        self.disable = disable
         self.exit_when_done = exit_when_done
         self.dirpath = dirpath
         self.prof = None
 
-        if not self.disable:
+        if not disable:
             self.prof = torch.profiler.profile(
                 activities=[
                     torch.profiler.ProfilerActivity.CPU,
@@ -43,29 +43,26 @@ class Profiler:
         output = p.key_averages(group_by_stack_n=5).table(
             sort_by="self_cuda_time_total", row_limit=20
         )
-        # output = p.key_averages().table(sort_by="cuda_time_total", row_limit=20)
         print(output)
         p.export_chrome_trace(filepath)
         print(f"Profiler trace saved to {filepath}")
         if self.exit_when_done:
             print("Profiling complete, exiting.")
-            exit()
+            sys.exit()
 
     def step(self):
         """Advance the profiler step."""
-        if not self.disable and self.prof:
+        if self.prof is not None:
             self.prof.step()
 
     def __enter__(self):
-        if self.disable:
-            return self
-        self.prof.__enter__()
+        if self.prof is not None:
+            self.prof.__enter__()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if self.disable:
-            return
-        self.prof.__exit__(exc_type, exc_value, traceback)
+        if self.prof is not None:
+            self.prof.__exit__(exc_type, exc_value, traceback)
 
 
 class MemoryProfiler:
@@ -94,4 +91,4 @@ class MemoryProfiler:
         torch.cuda.memory._dump_snapshot(self.filename)
         torch.cuda.memory._record_memory_history(enabled=None)
         if self.exit_on_done:
-            exit()
+            sys.exit()

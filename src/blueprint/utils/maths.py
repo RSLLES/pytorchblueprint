@@ -19,7 +19,7 @@ def logsumexp(
     return torch.logsumexp(x, dim=dim, keepdim=keepdim)
 
 
-def interpolate_tensor(t: Tensor, h: int, w: int, mode="bilinear"):
+def interpolate_tensor(t: Tensor, h: int, w: int, mode: str = "bilinear") -> Tensor:
     """Resize t to shape (B, C, h, w) using the specified interpolation mode."""
     if t.shape[-1] == w and t.shape[-2] == h:
         return t

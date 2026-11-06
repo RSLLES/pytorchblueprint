@@ -6,8 +6,8 @@
 from dataclasses import dataclass
 
 import numpy as np
+import sigfig
 from scipy.stats import qmc
-from sigfig import round
 
 
 @dataclass
@@ -21,7 +21,7 @@ class Parameter:
 
 def generate_quasi_random_sequence(
     parameters: list[Parameter], N: int, seed: int = 0
-) -> np.array:
+) -> np.ndarray:
     """Generate Sobol sequence scaled to parameter ranges."""
     if np.log2(N) != np.floor(np.log2(N)):
         print("[WARNING] Sobol sequence performs best when N is a power of 2.")
@@ -32,10 +32,10 @@ def generate_quasi_random_sequence(
 
     scaled_sample = np.empty_like(sample)
     for i, param in enumerate(parameters):
+        vmin, vmax = param.vmin, param.vmax
         if param.log:
-            param.vmin = np.log10(param.vmin)
-            param.vmax = np.log10(param.vmax)
-        scaled_sample[:, i] = param.vmin + sample[:, i] * (param.vmax - param.vmin)
+            vmin, vmax = np.log10(vmin), np.log10(vmax)
+        scaled_sample[:, i] = vmin + sample[:, i] * (vmax - vmin)
         if param.log:
             scaled_sample[:, i] = np.power(10, scaled_sample[:, i])
 
@@ -52,7 +52,7 @@ def main():  # noqa: D103
 
     samples = samples.tolist()
     for i, sample in enumerate(samples):
-        sample = [round(x, sigfigs=n_digits, type=str) for x in sample]
+        sample = [sigfig.round(x, sigfigs=n_digits, type=str) for x in sample]
         print(f"f {i} " + " ".join(sample))
 
 

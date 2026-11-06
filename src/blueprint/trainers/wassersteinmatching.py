@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-"""Moment matching training step."""
+"""Wasserstein matching training step."""
 
 import torch
 from torch import Tensor, nn
@@ -9,8 +9,8 @@ from torch import Tensor, nn
 from blueprint.losses.ot import sinkhorn_knopp_log
 
 
-class WasserteinMatchingTrainer(nn.Module):
-    """Train a model with Hyvarinen Score Matching."""
+class WassersteinMatchingTrainer(nn.Module):
+    """Train a model with an entropic optimal transport cost (Sinkhorn)."""
 
     def __init__(self, model: nn.Module, reg: float, n_iters: int):
         super().__init__()

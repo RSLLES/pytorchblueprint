@@ -6,7 +6,7 @@
 Modified from https://github.com/milesial/Pytorch-UNet/tree/master .
 """
 
-from torch import nn
+from torch import Tensor, nn
 
 from .unet_parts import DoubleConv, Down, OutConv, Up
 
@@ -52,7 +52,7 @@ class UNet(nn.Module):
             features //= 2
         self.head = OutConv(features, out_channels)
 
-    def forward(self, x):  # noqa: D102
+    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
         x = self.inc(x)
 
         X = [x]
@@ -60,7 +60,7 @@ class UNet(nn.Module):
             X.append(down(X[-1]))
 
         x = X.pop(-1)
-        for up, x_skip in zip(self.ups, X[::-1]):
+        for up, x_skip in zip(self.ups, X[::-1], strict=True):
             x = up(x, x_skip)
 
         x = self.head(x)

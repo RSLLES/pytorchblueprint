@@ -26,7 +26,7 @@ NODE_RANK=""
 N_DEVICES=""
 MAIN_ADDRESS=""
 TIMEOUT="1800"
-CMD_ARGS=""
+CMD_ARGS=()
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--)
 		shift
-		CMD_ARGS="$@"
+		CMD_ARGS=("$@")
 		break
 		;;
 	*)
@@ -61,7 +61,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [[ -z "$N_NODES" ]] || [[ -z "$NODE_RANK" ]] || [[ -z "$N_DEVICES" ]] || [[ -z "$CMD_ARGS" ]]; then
+if [[ -z "$N_NODES" ]] || [[ -z "$NODE_RANK" ]] || [[ -z "$N_DEVICES" ]] || [[ ${#CMD_ARGS[@]} -eq 0 ]]; then
 	display_help_and_exit
 fi
 
@@ -91,4 +91,4 @@ exec uv run python -m lightning.fabric.cli \
 	--main_address "$MAIN_ADDRESS" \
 	--main_port 29175 \
 	--node_rank "$NODE_RANK" \
-	$CMD_ARGS
+	"${CMD_ARGS[@]}"

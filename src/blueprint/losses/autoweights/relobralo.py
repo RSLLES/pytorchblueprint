@@ -14,6 +14,8 @@ import torch.distributed as dist
 import torch.nn as nn
 from torch import Tensor
 
+from blueprint.utils.distributed import is_distributed, reduce_across_ranks
+
 
 class ReLoBRaLo(nn.Module):
     """Relative Loss Balancing with Random Lookback."""
@@ -43,16 +45,9 @@ class ReLoBRaLo(nn.Module):
         self.register_buffer("initialized", torch.tensor(False))
 
     @torch.compiler.disable
-    def _sync_avg(self, x: Tensor) -> Tensor:
-        if dist.is_available() and dist.is_initialized():
-            x = x.clone()
-            dist.all_reduce(x, op=dist.ReduceOp.AVG)
-        return x
-
-    @torch.compiler.disable
     def _sync_bcast(self, x: Tensor) -> Tensor:
         """Broadcast x from rank 0 so all workers share the same value."""
-        if dist.is_available() and dist.is_initialized():
+        if is_distributed():
             x = x.clone()
             dist.broadcast(x, src=0)
         return x
@@ -64,7 +59,7 @@ class ReLoBRaLo(nn.Module):
 
     @torch.compiler.disable
     def _update(self, vals: Tensor) -> Tensor:
-        synced = self._sync_avg(vals)
+        synced = reduce_across_ranks(vals)
         if not self.initialized:
             self.L0.copy_(synced)
             self.L_prev.copy_(synced)

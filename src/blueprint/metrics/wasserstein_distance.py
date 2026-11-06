@@ -7,23 +7,21 @@ import torch
 from scipy.optimize import linear_sum_assignment
 from torch import Tensor
 from torchmetrics import Metric
-
-
-def dim_zero_cat(x: list | Tensor) -> Tensor:
-    """Concatenate along the first dimension."""
-    if isinstance(x, torch.Tensor):
-        return x
-    if not x:  # empty list
-        raise ValueError("No samples to concatenate")
-    return torch.cat(x, dim=0)
+from torchmetrics.utilities import dim_zero_cat
 
 
 class WassersteinDistance(Metric):
-    """Compute the p-Wasserstein distance between predictions and targets."""
+    """p-Wasserstein distance between equally sized sets of predictions and targets.
+
+    The optimal transport between two uniform empirical measures of the same size is
+    an assignment, which scipy solves exactly.
+    """
 
     is_differentiable = False
     higher_is_better = False
     full_state_update = False
+    x_pred: list[Tensor]
+    x_target: list[Tensor]
 
     def __init__(self, p: float = 1.0):
         super().__init__()
@@ -31,7 +29,7 @@ class WassersteinDistance(Metric):
         self.add_state("x_target", default=[], dist_reduce_fx="cat")
         self.p = p
 
-    def update(self, x_pred: Tensor, x_target: Tensor):  # noqa: D102
+    def update(self, x_pred: Tensor, x_target: Tensor) -> None:  # noqa: D102
         self.x_pred.append(x_pred)
         self.x_target.append(x_target)
 
@@ -41,5 +39,4 @@ class WassersteinDistance(Metric):
         dists = torch.cdist(x_pred, x_target, p=2.0)
         cost_matrix = dists.pow(self.p)
         idx_pred, idx_target = linear_sum_assignment(cost_matrix.cpu().numpy())
-        distance = cost_matrix[idx_pred, idx_target].mean()
-        return distance
+        return cost_matrix[idx_pred, idx_target].mean() ** (1 / self.p)

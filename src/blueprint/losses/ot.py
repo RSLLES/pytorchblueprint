@@ -5,11 +5,19 @@ import torch
 from torch import Tensor
 
 
+def _check_shapes(a: Tensor, b: Tensor, M: Tensor) -> None:
+    if a.ndim != 2 or b.ndim != 2 or M.ndim != 3:
+        raise ValueError(
+            "Expected marginals a [B, N], b [B, K] and costs M [B, N, K], "
+            f"got {a.shape}, {b.shape}, {M.shape}."
+        )
+
+
 def sinkhorn_knopp(
     a: Tensor, b: Tensor, M: Tensor, reg: float, n_iters: int = 20, eps: float = 1e-12
-):
-    """Sinkhorn algorithm."""
-    assert a.ndim == 2 and b.ndim == 2 and M.ndim == 3
+) -> Tensor:
+    """Return the entropic transport plan between a and b, by Sinkhorn iterations."""
+    _check_shapes(a, b, M)
 
     u = torch.ones_like(a)
     v = torch.ones_like(b)
@@ -30,9 +38,9 @@ def sinkhorn_knopp_log(
     reg: float | Tensor,
     n_iters: int = 20,
     eps: float = 1e-12,
-):
-    """Implement Sinkhorn algorithm in log space."""
-    assert a.ndim == 2 and b.ndim == 2 and M.ndim == 3
+) -> Tensor:
+    """Return the entropic transport plan, by Sinkhorn iterations in log space."""
+    _check_shapes(a, b, M)
 
     log_a = torch.log(a.clip(min=eps))
     log_b = torch.log(b.clip(min=eps))

@@ -23,7 +23,7 @@ class ExtendDataset(Dataset):
 
     def __getitem__(self, idx: int):
         if idx < 0 or idx >= self.__len__():
-            raise StopIteration()
+            raise IndexError(f"Index {idx} out of range for length {self.length}.")
         idx = idx % len(self.dataset)
         return self.dataset[idx]
 

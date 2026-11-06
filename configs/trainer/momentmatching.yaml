@@ -3,11 +3,6 @@
 
 _target_: blueprint.trainers.MomentMatchingTrainer
 mmd_model:
-  # _target_: blueprint.losses.MMDMax
-  # kernel:
-  #   _target_: blueprint.models.kernels.ExponentialKernel
-  #   p: 1
-  #   n_kernels: 5
   _target_: blueprint.losses.mmd.MMDRFF
   n_features: 256
   dist:

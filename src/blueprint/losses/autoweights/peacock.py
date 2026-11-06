@@ -17,7 +17,7 @@ from blueprint.utils.ema import ExpMovingAverage
 
 
 class PeacockWeighting(nn.Module):
-    """Implementent the Peacock weighting strategy for MOO, see [1]."""
+    """Implement the Peacock weighting strategy for MOO, see [1]."""
 
     def __init__(self, n_losses: int, eps: float = 1e-8):
         super().__init__()
@@ -27,7 +27,7 @@ class PeacockWeighting(nn.Module):
         self.Wk = nn.Linear(n_losses, n_losses, bias=False)
         self.Wv = nn.Linear(n_losses, n_losses, bias=False)
         self.scale = n_losses**-0.5
-        self.ema = ExpMovingAverage(lambd=1e-2, n_values=n_losses)
+        self.ema = ExpMovingAverage(lambd=1e-2, n_elements=n_losses)
 
     def compute_weights(self, losses: Tensor) -> Tensor:
         """Return loss weights (computed by a single self-attention block)."""

@@ -4,11 +4,11 @@
 from .flowmatchingtrainer import FlowMatchingTrainer
 from .momentmatching import MomentMatchingTrainer
 from .scorematching import ScoreMatchingTrainer
-from .wasserteinmatching import WasserteinMatchingTrainer
+from .wassersteinmatching import WassersteinMatchingTrainer
 
 __all__ = [
     "FlowMatchingTrainer",
     "MomentMatchingTrainer",
     "ScoreMatchingTrainer",
-    "WasserteinMatchingTrainer",
+    "WassersteinMatchingTrainer",
 ]

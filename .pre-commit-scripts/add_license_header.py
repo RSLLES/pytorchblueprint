@@ -14,7 +14,7 @@ def is_header(lines):
     """Check if the lines exactly match the HEADER_LINES."""
     if len(lines) != len(HEADER_LINES):
         return False
-    for line, expected in zip(lines, HEADER_LINES):
+    for line, expected in zip(lines, HEADER_LINES, strict=True):
         if line.strip() != expected.strip():
             return False
     return True
@@ -23,7 +23,7 @@ def is_header(lines):
 def check_and_add_header(filepath):
     """Check if a file has a header; add it otherise. Return True if file was edited."""
     try:
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             lines = f.readlines()
     except UnicodeDecodeError:
         print(f"Skipping binary or non-utf8 file: {filepath}")

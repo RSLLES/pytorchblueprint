@@ -9,6 +9,7 @@ Inspired by https://github.com/milesial/Pytorch-UNet/tree/master .
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 
 
 class DoubleConv(nn.Module):
@@ -46,7 +47,7 @@ class DoubleConv(nn.Module):
             act_layer(inplace=True),
         )
 
-    def forward(self, x):  # noqa: D102
+    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
         return self.double_conv(x)
 
 
@@ -73,7 +74,7 @@ class Down(nn.Module):
             ),
         )
 
-    def forward(self, x):  # noqa: D102
+    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
         return self.maxpool_conv(x)
 
 
@@ -100,7 +101,7 @@ class Up(nn.Module):
             act_layer=act_layer,
         )
 
-    def forward(self, x1, x2):  # noqa: D102
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:  # noqa: D102
         x1 = self.up(x1)
         diffY = x2.size()[2] - x1.size()[2]
         diffX = x2.size()[3] - x1.size()[3]
@@ -116,5 +117,5 @@ class OutConv(nn.Module):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
-    def forward(self, x):  # noqa: D102
+    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
         return self.conv(x)

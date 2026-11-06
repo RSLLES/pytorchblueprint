@@ -11,21 +11,25 @@ _RANK_STRIDE = 0x9E3779B97F4A7C15 % _MAX_SEED
 
 
 @torch.compiler.disable()
-def get_generator(seed: int | Tensor, device=None) -> Generator:
+def get_generator(
+    seed: int | Tensor, device: torch.device | str | None = None
+) -> Generator:
     """Return a torch.Generator seeded with `seed` on `device`."""
     if isinstance(seed, Tensor):
         device = seed.device if device is None else device
-        seed = seed.item()
+        seed = int(seed.item())
     gen = torch.Generator(device).manual_seed(seed)
     return gen
 
 
 @torch.compiler.disable()
-def get_rank_generator(seed: int | Tensor, rank: int, device=None) -> Generator:
+def get_rank_generator(
+    seed: int | Tensor, rank: int, device: torch.device | str | None = None
+) -> Generator:
     """Return a generator whose stream differs across data-parallel ranks."""
     if isinstance(seed, Tensor):
         device = seed.device if device is None else device
-        seed = seed.item()
+        seed = int(seed.item())
     return get_generator((seed + rank * _RANK_STRIDE) % _MAX_SEED, device)
 
 
@@ -36,12 +40,12 @@ def derive_new_seed(seed: int | Tensor) -> int | Tensor:
     new_seed = torch.randint(
         0, _MAX_SEED, size=(), device=gen.device, dtype=torch.int64, generator=gen
     )
-    new_seed = new_seed.item() if isinstance(seed, int) else new_seed
+    new_seed = int(new_seed.item()) if isinstance(seed, int) else new_seed
     return new_seed
 
 
 @torch.compiler.disable()
-def derive_new_seed_(seed: Tensor):
+def derive_new_seed_(seed: Tensor) -> None:
     """In-place version of derive_new_seed."""
     gen = get_generator(seed)
     new_seed = torch.randint(

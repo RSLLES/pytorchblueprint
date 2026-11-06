@@ -2,7 +2,7 @@
 # LICENSE file in the root directory of this source tree.
 
 defaults:
-  - dataset@ds_train: spiral
+  - dataset@ds_train: gaussian2spiral
   - dataset@ds_val: gaussian2spiral
   - dataset@ds_test: gaussian2spiral
   - runtime: training
