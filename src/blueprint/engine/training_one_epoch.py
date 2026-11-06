@@ -20,8 +20,8 @@ def train_one_epoch(
     fabric: Fabric,
     dl: DataLoader,
     n_accum_steps: int,
-    optimizers: list[Optimizer],
-    schedulers: list[LRScheduler],
+    optimizer: Optimizer,
+    scheduler: LRScheduler,
     step: int,
     total_steps: int,
     clock: TrainingClock | None,
@@ -30,15 +30,12 @@ def train_one_epoch(
     enable_profiling: bool,
 ) -> tuple[dict, int]:
     """Train for one epoch."""
-    if len(dl) == 0:
+    n_steps = len(dl) // n_accum_steps
+    if n_steps == 0:
         return {"loss": torch.tensor(torch.nan, device=fabric.device)}, step
 
-    n_steps = len(dl) // n_accum_steps
-    n_steps += 1 if len(dl) % n_accum_steps > 0 else 0
-
     training_module.train()
-    for opt in optimizers:
-        opt.zero_grad()
+    optimizer.zero_grad()
 
     # the per-step values only drive the progress bar; syncing them would add one
     # all-gather per metric per optimizer step
@@ -75,16 +72,18 @@ def train_one_epoch(
 
                 metrics = step_metrics.compute()
 
-                for opt in optimizers:
-                    if grad_clip_norm is not None:
-                        fabric.clip_gradients(
-                            training_module, opt, max_norm=grad_clip_norm
-                        )
-                    opt.step()
-                    opt.zero_grad()
-                for i, sche in enumerate(schedulers):
-                    metrics[f"lr{i}"] = sche.get_last_lr()[0]
-                    sche.step()
+                if grad_clip_norm is not None:
+                    fabric.clip_gradients(
+                        training_module,
+                        optimizer,
+                        max_norm=grad_clip_norm,
+                        error_if_nonfinite=False,
+                    )
+                optimizer.step()
+                optimizer.zero_grad()
+                for i, lr in enumerate(scheduler.get_last_lr()):
+                    metrics[f"lr{i}"] = lr
+                scheduler.step()
 
                 bar.set_text(utils.format.format_metrics({"step": step} | metrics))
                 bar.update(1)
@@ -94,7 +93,6 @@ def train_one_epoch(
                 epoch_metrics.update(metrics)
 
     if is_accumulating:
-        for opt in optimizers:
-            opt.zero_grad()
+        optimizer.zero_grad()
 
     return epoch_metrics.compute(), step

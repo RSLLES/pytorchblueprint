@@ -51,7 +51,7 @@ class WrappedTextProgressBar:
         """Initialize a progress bar, with an optional whole-run clock for the ETA."""
         self._disable = disable
         self._clock = clock
-        self._pbar = tqdm(total=total, position=0, leave=False)
+        self._pbar = tqdm(total=total, position=0, leave=False, disable=disable)
         self._desc_bars: list[tqdm] = []
 
     def _desc_bar(self, i: int) -> tqdm:

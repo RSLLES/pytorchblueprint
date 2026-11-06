@@ -20,13 +20,12 @@ def train(cfg: DictConfig) -> float:
     utils.torch.initialize_torch(detect_anomaly=cfgr.detect_anomaly)
     fabric = utils.fabric.initialize_fabric(
         cfgr.seed,
-        precision=cfgr.get("precision", "32-true"),
+        precision=cfgr.precision,
         devices=cfgr.devices,
-        find_unused_parameters=cfgr.get("find_unused_parameters", False),
+        find_unused_parameters=cfgr.find_unused_parameters,
     )
     cfg = utils.config.initialize_config(cfg)
 
-    cfg = utils.config.add_git_commit_hash(cfg)
     cfg = utils.config.add_eff_batch_size(cfg, world_size=fabric.world_size)
     cfgr.world_size = fabric.world_size
     if fabric.is_global_zero:
@@ -49,7 +48,9 @@ def train(cfg: DictConfig) -> float:
         world_size=fabric.world_size,
         shuffle=False,
     )
-    cfg = utils.config.add_total_steps(cfg, step_per_epoch=len(ds_train))
+    cfg = utils.config.add_total_steps(
+        cfg, n_samples=len(ds_train), world_size=fabric.world_size
+    )
 
     # model
     # a non-strict load leaves missing parameters as they were initialized
@@ -61,13 +62,18 @@ def train(cfg: DictConfig) -> float:
         scheduler = instantiate(cfg.scheduler, optimizer=optimizer)
     if fabric.is_global_zero:
         utils.model.present_model(model)
-    if cfgr.get("explain", False):
-        utils.model.explain_model(training_module, dl_train, fabric=fabric)
-        utils.fabric.exit_with_barrier(fabric)
-    if cfgr.compile:
+    explain = cfgr.get("explain", False)
+    if cfgr.compile and not explain:
         training_module.compile()
         if fabric.is_global_zero:
             print("Compilation enabled.")
+
+    # acceleration
+    training_module, optimizer = fabric.setup(training_module, optimizer)
+    dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
+    if explain:
+        utils.model.explain_model(training_module, dl_train, fabric=fabric)
+        utils.fabric.exit_with_barrier(fabric)
 
     epoch, step = 0, 0
     if "ckpt_path" in cfgr:
@@ -87,38 +93,29 @@ def train(cfg: DictConfig) -> float:
             fabric=fabric,
             ckpt_path=cfgr.weights_path,
             model=training_module,
-            optimizer=None,
-            scheduler=None,
             strict=cfgr.strict_loading,
         )
         if fabric.is_global_zero:
             print(f"Weights loaded from {cfgr.weights_path}")
 
-    # logs
-    if "log_dir" not in cfgr:
+    # logs; an OOM retry reruns this function, so the resolved path stays out of cfg
+    log_dir = cfgr.get("log_dir")
+    tempdir = None
+    if log_dir is None:
         log_dir = utils.logs.get_log_dir(cfgr.name) if fabric.is_global_zero else None
-        cfgr.log_dir = fabric.broadcast(log_dir, src=0)
-    if cfgr.log_dir == "/tmp":
-        log_dir = None
+        log_dir = fabric.broadcast(log_dir, src=0)
+    elif log_dir == "/tmp":
         if fabric.is_global_zero:
             tempdir = TemporaryDirectory()
-            log_dir = tempdir.name
-        cfgr.log_dir = fabric.broadcast(log_dir, src=0)
-    elif os.path.exists(cfgr.log_dir):
-        raise ValueError(f"log_dir '{cfgr.log_dir}' exists.")
+        log_dir = fabric.broadcast(tempdir.name if tempdir else None, src=0)
+    elif os.path.exists(log_dir):
+        raise ValueError(f"log_dir '{log_dir}' exists.")
     if fabric.is_global_zero:
-        print(f"Log directory is {cfgr.log_dir}")
-
-    # metrics
-    evaluators = [engine.WassersteinEvaluator(), engine.ScatterPlotEvaluator()]
+        print(f"Log directory is {log_dir}")
 
     # training options
     if not cfgr.detect_divergence and fabric.is_global_zero:
         print("Warning: divergence detection is disabled.")
-
-    # acceleration
-    training_module, optimizer = fabric.setup(training_module, optimizer)
-    dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
 
     # train
     best_metric = engine.train(
@@ -129,9 +126,8 @@ def train(cfg: DictConfig) -> float:
         training_module=training_module,
         dl_train=dl_train,
         dl_val=dl_val,
-        evaluators=evaluators,
-        log_dir=cfgr.log_dir,
-        cfg_str=utils.config.dump_config(cfg),
+        log_dir=log_dir,
+        cfg_str=OmegaConf.to_yaml(cfg, sort_keys=True),
         begin_epoch=epoch,
         begin_step=step,
         n_epochs=cfgr.n_epochs,

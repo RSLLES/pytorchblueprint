@@ -28,26 +28,17 @@ def load_training(
     fabric: Fabric,
     ckpt_path: str,
     model: Module,
-    optimizer: Optimizer | list[Optimizer] | None,
-    scheduler: LRScheduler | list[LRScheduler] | None,
+    optimizer: Optimizer | None = None,
+    scheduler: LRScheduler | None = None,
     strict: bool = True,
 ) -> tuple[int, int]:
     """Load training module and optimizer states, returning epoch and step."""
     d = fabric.load(ckpt_path)
     model.load_state_dict(d["model"], strict=strict)
-
-    if isinstance(optimizer, Optimizer):
+    if optimizer is not None:
         optimizer.load_state_dict(d["optimizer"])
-    if isinstance(optimizer, list):
-        for opt, opt_state in zip(optimizer, d["optimizer"]):
-            opt.load_state_dict(opt_state)
-
-    if isinstance(scheduler, LRScheduler):
+    if scheduler is not None:
         scheduler.load_state_dict(d["scheduler"])
-    if isinstance(scheduler, list):
-        for sche, sche_state in zip(scheduler, d["scheduler"]):
-            sche.load_state_dict(sche_state)
-
     return d["epoch"], d["step"]
 
 
@@ -60,9 +51,9 @@ def save_training(
     epoch: int,
     step: int,
     model: Module,
-    optimizer: Optimizer | list[Optimizer],
-    scheduler: LRScheduler | list[LRScheduler],
-):
+    optimizer: Optimizer,
+    scheduler: LRScheduler,
+) -> None:
     """Save training state to a checkpoint file."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {

@@ -3,7 +3,8 @@
 
 """Utility functions for hydra configuration."""
 
-import yaml
+import math
+
 from omegaconf import DictConfig, OmegaConf
 
 from blueprint.utils.git import get_head_commit_hash
@@ -20,12 +21,6 @@ def initialize_config(cfg: DictConfig):
     return cfg
 
 
-def add_git_commit_hash(cfg: DictConfig):
-    """Add git commit hash to configuration."""
-    cfg.runtime.git_commit_hash = get_head_commit_hash()
-    return cfg
-
-
 def add_eff_batch_size(cfg: DictConfig, world_size: int):
     """Compute effective batch size and assign to configuration."""
     cfg.runtime.eff_batch_size = (
@@ -34,24 +29,12 @@ def add_eff_batch_size(cfg: DictConfig, world_size: int):
     return cfg
 
 
-def add_total_steps(cfg: DictConfig, step_per_epoch: int):
-    """Compute total training steps and assign to configuration."""
-    if cfg.runtime.n_epochs > 0:
-        cfg.runtime.total_steps = (
-            cfg.runtime.n_epochs * step_per_epoch // cfg.runtime.eff_batch_size
-        )
-    else:
-        cfg.runtime.total_steps = -1
+def add_total_steps(cfg: DictConfig, n_samples: int, world_size: int) -> DictConfig:
+    """Count the optimizer steps each rank takes over training, -1 if unbounded."""
+    cfgr = cfg.runtime
+    if cfgr.n_epochs <= 0:
+        cfgr.total_steps = -1
+        return cfg
+    n_batches = math.ceil(math.ceil(n_samples / world_size) / cfgr.batch_size)
+    cfgr.total_steps = cfgr.n_epochs * (n_batches // cfgr.n_accum_steps)
     return cfg
-
-
-def dump_config(cfg: DictConfig) -> str:
-    """Dump configuration to YAML string."""
-    return yaml.dump(OmegaConf.to_container(cfg), default_flow_style=False)
-
-
-def load_config(filepath: str):
-    """Load a config from a yaml file."""
-    with filepath.open() as f:
-        cfg_dict = yaml.safe_load(f)
-    return OmegaConf.create(cfg_dict)

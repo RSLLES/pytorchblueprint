@@ -18,16 +18,6 @@ def format_metrics(metrics: dict) -> str:
     return "; ".join(f"{name}:{format_object(x)}" for name, x in metrics.items())
 
 
-def format_metrics_with_uncertainties(metrics: dict[str, list[Tensor]]) -> str:
-    """Format the mean and standard deviation of each metric over runs (Drake)."""
-    strings = []
-    for name, values in metrics.items():
-        std, mean = torch.std_mean(torch.stack(values))
-        s = round(mean.item(), uncertainty=std.item(), format="Drake")
-        strings.append(f"{name}:{s}" if s[0] == "-" else f"{name}: {s}")
-    return "; ".join(strings)
-
-
 def format_object(x: any) -> str:
     """Format all sorts of objects to strings."""
     if isinstance(x, np.ndarray):

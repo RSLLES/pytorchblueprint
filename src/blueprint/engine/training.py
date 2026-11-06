@@ -1,10 +1,10 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+import itertools
 import operator
 import os
-import sys
-from collections.abc import Sequence
+from typing import Any
 
 from lightning.fabric import Fabric
 from matplotlib.figure import Figure
@@ -17,18 +17,15 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from blueprint import engine, utils
 from blueprint.utils.progress_bar import TrainingClock
 
-from .evaluators import Evaluator
-
 
 def train(
     fabric: Fabric,
     model: nn.Module,
     training_module: nn.Module,
-    optimizer: Optimizer | list[Optimizer],
-    scheduler: LRScheduler | list[LRScheduler],
+    optimizer: Optimizer,
+    scheduler: LRScheduler,
     dl_train: DataLoader,
     dl_val: DataLoader,
-    evaluators: Sequence[Evaluator],
     watched_metric: str | None,
     watched_metric_strategy: str,
     log_dir: str,
@@ -43,9 +40,8 @@ def train(
     grad_clip_norm: float | None = None,
     detect_divergence: bool = True,
     enable_profiling: bool = False,
-):
-    """Train a model for n epochs."""
-    # init
+) -> float:
+    """Train for n epochs, or until interrupted when n_epochs is negative."""
     watched_metric_strategy = utils.format.format_string(watched_metric_strategy)
     if watched_metric_strategy not in ["min", "max"]:
         raise ValueError(
@@ -57,32 +53,32 @@ def train(
             "detect_divergence and patience need a watched_metric: they rely on the "
             "best checkpoint."
         )
-    best_epoch = begin_epoch
+    best_epoch: int | None = None
     best_metric = float("-inf") if watched_metric_strategy == "max" else float("inf")
     is_better = operator.ge if watched_metric_strategy == "max" else operator.le
 
-    optimizers = [optimizer] if isinstance(optimizer, Optimizer) else optimizer
-    schedulers = [scheduler] if isinstance(scheduler, LRScheduler) else scheduler
-
     logger = None  # delayed initialization
     loss_history = []
-    n_epochs = n_epochs if n_epochs >= 0 else sys.maxsize**10
     path_last_ckpt, path_best_ckpt = utils.checkpoint.get_ckpts_path(log_dir)
     step = begin_step
     clock = TrainingClock(steps_left=total_steps - step) if total_steps > 0 else None
+    takes_optimizer_steps = len(dl_train) >= n_accum_steps
 
-    for epoch in range(begin_epoch, n_epochs):
-        # train, validate
+    epochs = (
+        range(begin_epoch, n_epochs) if n_epochs >= 0 else itertools.count(begin_epoch)
+    )
+    for epoch in epochs:
         dl_train.dataset.increment_seed()
         metrics = {}
+        diverged = False
         local_oom = False
         try:
-            train_metrics, step = engine.train_one_epoch(
+            metrics, step = engine.train_one_epoch(
                 fabric=fabric,
                 dl=dl_train,
                 n_accum_steps=n_accum_steps,
-                optimizers=optimizers,
-                schedulers=schedulers,
+                optimizer=optimizer,
+                scheduler=scheduler,
                 step=step,
                 total_steps=total_steps,
                 clock=clock,
@@ -90,34 +86,41 @@ def train(
                 training_module=training_module,
                 enable_profiling=enable_profiling,
             )
-            metrics = train_metrics
-            if should_validate(val_stride, epoch=epoch, n_epochs=n_epochs):
-                metrics |= engine.validate(
-                    fabric=fabric, model=model, dl=dl_val, evaluators=evaluators
-                )
+            if detect_divergence and takes_optimizer_steps:
+                loss_history.append(metrics["loss"])
+                diverged = utils.divergence.detect_divergence(loss_history)
+            if not diverged and should_validate(val_stride, epoch, n_epochs):
+                metrics |= engine.validate(fabric=fabric, model=model, dl=dl_val)
         except RuntimeError as error:
             if not utils.oom.is_oom(error):
                 raise
             local_oom = True
         utils.oom.raise_on_any_rank_oom(fabric, local_oom)
 
-        # log
         if fabric.is_global_zero:
-            logs = {"epoch": epoch, "step": step} | metrics
             if logger is None:
                 os.makedirs(log_dir, exist_ok=True)
                 utils.logs.write_file(cfg_str, filename="config.yaml", log_dir=log_dir)
                 logger = SummaryWriter(log_dir)
-            for key, value in logs.items():
-                if isinstance(value, Tensor) and value.nelement() > 1:
-                    logger.add_tensor(tag=key, tensor=value, global_step=step)
-                elif isinstance(value, Figure):
-                    logger.add_figure(tag=key, figure=value, global_step=step)
-                else:
-                    logger.add_scalar(tag=key, scalar_value=value, global_step=step)
-            print(utils.format.format_metrics(logs))
+            _log_epoch(logger, {"epoch": epoch, "step": step} | metrics, step)
 
-        # save
+        if diverged:
+            if best_epoch is None:
+                raise RuntimeError(
+                    "Training diverged before a best checkpoint was saved."
+                )
+            if fabric.is_global_zero:
+                print("Divergence detected. Reverting to previous best weights.")
+            utils.checkpoint.load_training(
+                fabric=fabric,
+                ckpt_path=path_best_ckpt,
+                optimizer=optimizer,
+                scheduler=scheduler,
+                model=training_module,
+            )
+            loss_history = []
+            continue
+
         utils.checkpoint.save_training(
             fabric=fabric,
             path=path_last_ckpt,
@@ -142,28 +145,25 @@ def train(
                 model=training_module,
             )
 
-        # early stopping
-        if patience > 0 and epoch > best_epoch + patience:
+        if patience > 0 and best_epoch is not None and epoch > best_epoch + patience:
             if fabric.is_global_zero:
                 print(f"Exceeded patience of {patience} epochs; early stopping.")
             break
 
-        # divergence
-        if detect_divergence and len(dl_train) != 0:
-            loss_history.append(metrics["loss"])
-            if utils.divergence.detect_divergence(loss_history):
-                if fabric.is_global_zero:
-                    print("Divergence detected. Reverting to previous best weights.")
-                utils.checkpoint.load_training(
-                    fabric=fabric,
-                    ckpt_path=path_best_ckpt,
-                    optimizer=optimizer,
-                    scheduler=scheduler,
-                    model=training_module,
-                )
-                loss_history = []
-
+    if logger is not None:
+        logger.close()
     return best_metric
+
+
+def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int) -> None:
+    for key, value in logs.items():
+        if isinstance(value, Tensor) and value.nelement() > 1:
+            logger.add_tensor(tag=key, tensor=value, global_step=step)
+        elif isinstance(value, Figure):
+            logger.add_figure(tag=key, figure=value, global_step=step)
+        else:
+            logger.add_scalar(tag=key, scalar_value=value, global_step=step)
+    print(utils.format.format_metrics(logs))
 
 
 def should_validate(val_stride: int, epoch: int, n_epochs: int) -> bool:
