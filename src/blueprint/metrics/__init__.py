@@ -3,12 +3,12 @@
 
 from .lazy_collection import LazyMetricCollection
 from .median_of_means import MedianOfMeans
-from .quantile import ReservoirOnlineQuantile
+from .quantile import KLLOnlineQuantile
 from .wassertein_distance import WassersteinDistance
 
 __all__ = [
     "LazyMetricCollection",
     "MedianOfMeans",
-    "ReservoirOnlineQuantile",
+    "KLLOnlineQuantile",
     "WassersteinDistance",
 ]
