@@ -77,8 +77,7 @@ Keep designs simple, short and easy to modify (KISS).
 - Report tests or lint failures that existed before your change; never fix them silently.
 - Review the final diff. Report actual check results and blockers; never claim verification you did not perform.
 
-## Git and communication
+## Git
 
-- Work in a task worktree for non-trivial tasks; reuse one already provided. Inspect Git status and preserve existing changes.
-- Use `--no-gpg-sign` when committing. Never push; the remote is mine.
-- Show the relevant diff and brief verification results. No per-edit tour.
+- Run `git status` first: if the worktree is dirty, work in a new worktree under `.worktrees/`; otherwise, work in place.
+- Never commit, rebase, reset, switch, checkout, or push without my explicit instruction.
