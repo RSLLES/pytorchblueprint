@@ -8,7 +8,7 @@ import hydra
 from hydra.utils import instantiate
 from omegaconf import DictConfig, OmegaConf
 
-from blueprint import engine, utils
+from blueprint import engine, optimizers, utils
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="momentmatching")
@@ -58,7 +58,11 @@ def train(cfg: DictConfig) -> float:
     with fabric.init_module(empty_init=load_all):
         model = instantiate(cfg.model)
         training_module = instantiate(cfg.trainer, model=model)
-        optimizer = instantiate(cfg.optimizer, params=training_module.parameters())
+        optimizer = instantiate(
+            cfg.optimizer,
+            params=optimizers.split_param_groups(training_module, model),
+            _convert_="partial",
+        )
         scheduler = instantiate(cfg.scheduler, optimizer=optimizer)
     if fabric.is_global_zero:
         utils.model.present_model(model)

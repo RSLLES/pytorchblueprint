@@ -4,7 +4,7 @@
 import torch
 from torch import Tensor, nn
 
-from .basics import FourierEmbeddings
+from .basics import FourierEmbeddings, ResnetBlocks
 
 
 def langevin_step(score_fn: callable, x: Tensor, step_size: float) -> Tensor:
@@ -24,18 +24,6 @@ def langevin_dynamics(
     return x
 
 
-class ResnetBlock(nn.Module):
-    """ResNet block with SiLU activation."""
-
-    def __init__(self, dim):
-        super().__init__()
-        self.block = nn.Sequential(nn.Linear(dim, dim), nn.SiLU(), nn.Linear(dim, dim))
-        self.act = nn.SiLU()
-
-    def forward(self, x):  # noqa: D102
-        return self.act(x + self.block(x))
-
-
 class ScoreNet(nn.Module):
     """Toy model that learns a input_dim-D score function."""
 
@@ -49,13 +37,12 @@ class ScoreNet(nn.Module):
     ):
         super().__init__()
         self.embed = FourierEmbeddings(input_dim, inner_dim, scale=embed_scale)
-        self.net = nn.Sequential(
+        self.body = nn.Sequential(
             nn.Linear(inner_dim, inner_dim),
             nn.SiLU(),
-            ResnetBlock(inner_dim),
-            ResnetBlock(inner_dim),
-            nn.Linear(inner_dim, input_dim),
+            ResnetBlocks(inner_dim, depth=2),
         )
+        self.head = nn.Linear(inner_dim, input_dim)
         self.n_steps = n_steps
         self.step_size = step_size
 
@@ -63,9 +50,8 @@ class ScoreNet(nn.Module):
         """Perform a single step."""
         x_shape = x.shape
         x_flat = x.reshape(-1, x.size(-1))
-        outputs_flat = self.net(self.embed(x_flat))
-        outputs = outputs_flat.view(*x_shape)
-        return outputs
+        outputs_flat = self.head(self.body(self.embed(x_flat)))
+        return outputs_flat.view(*x_shape)
 
     def forward(self, x: Tensor) -> Tensor:
         """Perform either a single step when training, or integrate during inference."""

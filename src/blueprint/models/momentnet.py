@@ -18,17 +18,20 @@ class MomentNet(nn.Module):
     ):
         super().__init__()
         self.output_dim = input_dim if output_dim is None else output_dim
-        self.net = nn.Sequential(
-            FourierEmbeddings(input_dim, inner_dim, scale=embed_scale),
+        self.embed = FourierEmbeddings(input_dim, inner_dim, scale=embed_scale)
+        self.body = nn.Sequential(
             nn.Linear(inner_dim, inner_dim),
             nn.SiLU(),
             ResnetBlocks(inner_dim, depth=2),
-            nn.Linear(inner_dim, self.output_dim),
         )
+        self.head = nn.Linear(inner_dim, self.output_dim)
+
+    def hidden_matrices(self) -> list[Tensor]:
+        """Return the weight matrices between the input and output layers."""
+        return [m.weight for m in self.body.modules() if isinstance(m, nn.Linear)]
 
     def forward(self, x: Tensor) -> Tensor:  # noqa: D102
         output_shape = x.shape[:-1] + (self.output_dim,)
         x_flat = x.reshape(-1, x.size(-1))
-        outputs_flat = self.net(x_flat)
-        outputs = outputs_flat.view(*output_shape)
-        return outputs
+        outputs_flat = self.head(self.body(self.embed(x_flat)))
+        return outputs_flat.view(*output_shape)

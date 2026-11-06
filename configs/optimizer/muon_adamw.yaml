@@ -1,0 +1,13 @@
+# This source code is licensed under the license found in the
+# LICENSE file in the root directory of this source tree.
+
+_target_: blueprint.optimizers.MuonAdamW
+muon:
+  _target_: torch.optim.Muon
+  _partial_: true
+  lr: 0.02
+adamw:
+  _target_: torch.optim.AdamW
+  _partial_: true
+  lr: 0.003
+  weight_decay: 0.01

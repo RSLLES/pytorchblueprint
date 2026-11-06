@@ -7,8 +7,18 @@ from . import (
     losses,
     metrics,
     models,
+    optimizers,
     trainers,
     utils,
 )
 
-__all__ = ["datasets", "engine", "losses", "metrics", "models", "trainers", "utils"]
+__all__ = [
+    "datasets",
+    "engine",
+    "losses",
+    "metrics",
+    "models",
+    "optimizers",
+    "trainers",
+    "utils",
+]
