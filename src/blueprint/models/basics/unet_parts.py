@@ -35,7 +35,7 @@ class DoubleConv(nn.Module):
                 bias=False,
             ),
             norm_layer(mid_channels),
-            act_layer(inplace=True),
+            act_layer(),
             nn.Conv2d(
                 mid_channels,
                 out_channels,
@@ -44,7 +44,7 @@ class DoubleConv(nn.Module):
                 bias=False,
             ),
             norm_layer(out_channels),
-            act_layer(inplace=True),
+            act_layer(),
         )
 
     def forward(self, x: Tensor) -> Tensor:  # noqa: D102
