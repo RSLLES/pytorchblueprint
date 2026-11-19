@@ -116,6 +116,24 @@ def test_second_run_in_the_same_log_dir_raises(tmp_path):
         _train(tmp_path, [1.0, 1.0, 1.0])
 
 
+@pytest.mark.parametrize("precision", ["bf16-mixed", "bf16-true", "64-true"])
+def test_validation_runs_at_the_training_precision(precision):
+    """Validation runs the model with the dtypes and autocast state of training."""
+    fabric = Fabric(accelerator="cpu", devices=1, precision=precision)
+    model = MomentNet(input_dim=2, inner_dim=8)
+    training_module = fabric.setup(nn.Sequential(model))
+    calls = []
+
+    def record(module: nn.Module, inputs: tuple[Tensor], output: Tensor) -> None:
+        autocast = torch.is_autocast_enabled("cpu")
+        calls.append((inputs[0].dtype, torch.get_default_dtype(), autocast))
+
+    model.register_forward_hook(record)
+    training_module(torch.randn(4, 2))
+    engine.validate(fabric=fabric, dl=_dl(4), model=model)
+    assert calls[1] == calls[0]
+
+
 def test_nan_gradients_revert_to_best_checkpoint(tmp_path):
     """NaN gradients reach the divergence check, which restores the best weights."""
     scripted = _train(

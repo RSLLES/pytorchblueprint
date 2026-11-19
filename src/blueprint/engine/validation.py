@@ -21,10 +21,13 @@ def validate(
     distance = WassersteinDistance(p=1.0)
     for metric in (source, result, target, distance):
         metric.to(fabric.device)
+    precision = fabric.strategy.precision
     model.eval()
     for batch in tqdm(dl, leave=False, desc="val", disable=not fabric.is_global_zero):
         x_source, x_target = batch["sourcedist"], batch["targetdist"]
-        x_pred = model(x_source)
+        with precision.forward_context():
+            x_pred = model(precision.convert_input(x_source))
+        x_pred = precision.convert_output(x_pred)
         source.update(x_source)
         result.update(x_pred)
         target.update(x_target)
