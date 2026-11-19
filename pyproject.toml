@@ -10,6 +10,7 @@ dependencies = [
     "lightning>=2.5.5",
     "matplotlib>=3.10.6",
     "numpy>=2.3.4",
+    "omegaconf>=2.3.0",
     "pandas>=2.3.3",
     "scipy>=1.16.2",
     "setuptools>=80.9.0",
@@ -17,6 +18,7 @@ dependencies = [
     "tensorboard>=2.20.0",
     "torch>=2.15.0",
     "torchmetrics>=1.8.2",
+    "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
