@@ -71,6 +71,7 @@ def train(
         dl_train.dataset.increment_seed()
         metrics = {}
         diverged = False
+        validated = False
         local_oom = False
         try:
             metrics, step = engine.train_one_epoch(
@@ -89,7 +90,8 @@ def train(
             if detect_divergence and takes_optimizer_steps:
                 loss_history.append(metrics["loss"])
                 diverged = utils.divergence.detect_divergence(loss_history)
-            if not diverged and should_validate(val_stride, epoch, n_epochs):
+            validated = not diverged and should_validate(val_stride, epoch, n_epochs)
+            if validated:
                 metrics |= engine.validate(fabric=fabric, model=model, dl=dl_val)
         except RuntimeError as error:
             if not utils.oom.is_oom(error):
@@ -130,6 +132,16 @@ def train(
             scheduler=scheduler,
             model=training_module,
         )
+        # epochs that skip validation lack its metrics; only the others reveal a typo
+        has_all_metrics = validated or val_stride == 0
+        if (
+            has_all_metrics
+            and watched_metric is not None
+            and watched_metric not in metrics
+        ):
+            raise ValueError(
+                f"watched_metric '{watched_metric}' is not among {sorted(metrics)}."
+            )
         if watched_metric in metrics and is_better(
             metrics[watched_metric], best_metric
         ):

@@ -55,7 +55,9 @@ def _setup(epoch_losses: list[float]):
 def _train(
     tmp_path,
     epoch_losses: list[float],
+    watched_metric: str = "loss",
     watched_metric_strategy: str = "min",
+    val_stride: int = 1,
     detect_divergence: bool = False,
     grad_clip_norm: float | None = None,
     total_steps: int = -1,
@@ -72,11 +74,12 @@ def _train(
         scheduler=scheduler,
         dl_train=dl,
         dl_val=dl,
-        watched_metric="loss",
+        watched_metric=watched_metric,
         watched_metric_strategy=watched_metric_strategy,
         log_dir=str(tmp_path),
         cfg_str="",
         n_epochs=3,
+        val_stride=val_stride,
         total_steps=total_steps,
         grad_clip_norm=grad_clip_norm,
         detect_divergence=detect_divergence,
@@ -90,6 +93,20 @@ def test_best_checkpoint_follows_strategy(tmp_path, strategy, expected_epoch):
     _train(tmp_path, [3.0, 1.0, 2.0], watched_metric_strategy=strategy)
     best = torch.load(tmp_path / "best.tar", weights_only=False)
     assert best["epoch"] == expected_epoch
+
+
+@pytest.mark.parametrize("val_stride", [1, 0])
+def test_misspelled_watched_metric_raises(tmp_path, val_stride):
+    """A misspelled watched metric must raise, not silently skip best checkpoints."""
+    with pytest.raises(ValueError, match="lsos"):
+        _train(tmp_path, [1.0, 1.0, 1.0], watched_metric="lsos", val_stride=val_stride)
+
+
+def test_validation_metric_can_be_watched_across_skipped_epochs(tmp_path):
+    """Epochs that skip validation lack its metrics, which is no reason to fail."""
+    _train(tmp_path, [1.0, 1.0, 1.0], watched_metric="earth_mover_dist", val_stride=2)
+    best = torch.load(tmp_path / "best.tar", weights_only=False)
+    assert best["epoch"] in (1, 2)  # the validated epochs
 
 
 def test_nan_gradients_revert_to_best_checkpoint(tmp_path):
