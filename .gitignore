@@ -1,5 +1,5 @@
 __pycache__
-.claude/worktrees/**
+.worktrees/**
 *.egg-info/
 .claude/**
 .vscode/**
