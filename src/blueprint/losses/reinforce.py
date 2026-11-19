@@ -37,19 +37,10 @@ class BaselineReinforce(nn.Module):
         if self.ensure_detached_loss:
             loss = loss.detach()
 
-        reward = loss.mean()
-
-        if self.ema_mean.is_initialized:
-            mean = self.ema_mean.value()
-            std = self.ema_var.value().sqrt()
-            advantage = (loss - mean) / (std + self.eps)
-        else:
-            advantage = loss - loss.mean()
-
-        self.ema_mean.update(reward)
-        residual_sq = (reward - self.ema_mean.value()).pow(2)
-        self.ema_var.update(residual_sq)
-
+        # updating mean first biases the baseline, but bounds |advantage|
+        mean = self.ema_mean(loss.mean())
+        var = self.ema_var((loss - mean).square().mean())
+        advantage = (loss - mean) / (var.sqrt() + self.eps)
         return (advantage * log_prob).mean()
 
 
