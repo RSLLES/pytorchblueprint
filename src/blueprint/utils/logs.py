@@ -25,8 +25,8 @@ def _get_next_version(root_path: str, prefix: str) -> int:
 
 
 def write_file(content: str, filename: str, log_dir: str) -> None:
-    """Write the given content to a file inside the specified log directory."""
+    """Write the content to a new file in log_dir; raise if the file exists."""
     os.makedirs(log_dir, exist_ok=True)
     path = os.path.join(log_dir, filename)
-    with open(path, "w") as f:
+    with open(path, "x") as f:
         f.write(content)

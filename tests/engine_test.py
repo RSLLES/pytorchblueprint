@@ -109,6 +109,13 @@ def test_validation_metric_can_be_watched_across_skipped_epochs(tmp_path):
     assert best["epoch"] in (1, 2)  # the validated epochs
 
 
+def test_second_run_in_the_same_log_dir_raises(tmp_path):
+    """Two runs that picked the same log directory must not overwrite each other."""
+    _train(tmp_path, [1.0, 1.0, 1.0])
+    with pytest.raises(FileExistsError):
+        _train(tmp_path, [1.0, 1.0, 1.0])
+
+
 def test_nan_gradients_revert_to_best_checkpoint(tmp_path):
     """NaN gradients reach the divergence check, which restores the best weights."""
     scripted = _train(
