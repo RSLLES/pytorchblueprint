@@ -21,15 +21,15 @@ ds_val:
     seed: 1
   targetdist:
     length: 1024
-    seed: 1
+    seed: 2
 
 ds_test:
   sourcedist:
     length: 1024
-    seed: 2
+    seed: 3
   targetdist:
     length: 1024
-    seed: 2
+    seed: 4
 
 optimizer:
   lr: 0.003

@@ -1,6 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+import numpy as np
 import torch
 from torch import Generator, Tensor
 from torch.utils.data import Dataset, default_collate
@@ -31,8 +32,8 @@ class Sample2DDataset(Dataset):
     def __getitem__(self, idx: int) -> Tensor:
         if idx < 0 or idx >= self.__len__():
             raise IndexError(f"Index {idx} out of range for length {self.length}.")
-        seed = blueprint.utils.random.derive_new_seed(self.seed + idx + 1)
-        gen = blueprint.utils.random.get_generator(seed)
+        seed = np.random.SeedSequence([self.seed, idx]).generate_state(1, np.uint64)
+        gen = blueprint.utils.random.get_generator(int(seed[0]))
         return self.sample(n=1, gen=gen).squeeze(0)
 
 

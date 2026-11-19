@@ -6,3 +6,5 @@ defaults:
   - spiral@targetdist
 
 _target_: blueprint.datasets.utils.StackDataset
+targetdist:
+  seed: ${eval:'${runtime.seed} + 1'}
