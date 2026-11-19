@@ -27,7 +27,7 @@ Be concise when you write or code, never hasty when you think: weigh the pros an
 - Early returns, straightforward control flow, no needless metaprogramming.
 - Names: one concept, one name; conventional when a convention exists; no opaque abbreviations.
 - Annotate new or changed Python functions with precise types in modern syntax. Use `Any` only when unavoidable; never hide a type error with a cast or an ignore.
-- Let names, types, and structure carry the intent. Comment only non-obvious constraints, contracts, or reasons: no narration, banners, commented-out code, or edit notes. Fix comments your change makes false.
+- Comments are never neutral: they clutter the code and excuse unclear code. Avoid them at all costs; rewrite until names, types, and structure carry the intent. A comment is a last resort, for the rare fact a highly skilled engineer would still miss. Never narration, banners, commented-out code, or edit notes.
 - Public functions and methods get a one-line docstring, nothing more.
 
 ## Verification

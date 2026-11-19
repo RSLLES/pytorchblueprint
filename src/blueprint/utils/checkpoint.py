@@ -63,8 +63,6 @@ def save_training(
         "scheduler": scheduler,
         "model": model,
     }
-    # fabric.save stages the file in the system temp dir and copies it into place when
-    # that is another filesystem, so a kill mid-copy would corrupt `path`
     tmp_path = f"{path}.tmp"
     fabric.save(tmp_path, state)
     if fabric.is_global_zero:

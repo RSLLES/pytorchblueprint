@@ -106,7 +106,7 @@ def test_validation_metric_can_be_watched_across_skipped_epochs(tmp_path):
     """Epochs that skip validation lack its metrics, which is no reason to fail."""
     _train(tmp_path, [1.0, 1.0, 1.0], watched_metric="earth_mover_dist", val_stride=2)
     best = torch.load(tmp_path / "best.tar", weights_only=False)
-    assert best["epoch"] in (1, 2)  # the validated epochs
+    assert best["epoch"] in (1, 2)
 
 
 def test_second_run_in_the_same_log_dir_raises(tmp_path):

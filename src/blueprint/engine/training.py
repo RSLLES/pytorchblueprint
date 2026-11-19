@@ -132,7 +132,6 @@ def train(
             scheduler=scheduler,
             model=training_module,
         )
-        # epochs that skip validation lack its metrics; only the others reveal a typo
         has_all_metrics = validated or val_stride == 0
         if (
             has_all_metrics
