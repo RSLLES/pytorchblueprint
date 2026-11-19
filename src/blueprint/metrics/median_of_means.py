@@ -46,12 +46,14 @@ class MedianOfMeans(Metric):
     def update(self, value: float | Tensor) -> None:  # noqa: D102
         if self._gen is None:
             self._gen = get_generator(self.seed, device=self.device)
-        value = torch.as_tensor(value, device=self.device).flatten()
+        # updated every training step, so it must not wait for the GPU: a blocking
+        # copy or torch.bincount (which reads groups.max()) would
+        value = torch.as_tensor(value).to(self.device, non_blocking=True).flatten()
         groups = torch.randint(
             0, self.n_groups, (value.numel(),), device=self.device, generator=self._gen
         )
-        self.sums += torch.bincount(groups, weights=value, minlength=self.n_groups)
-        self.counts += torch.bincount(groups, minlength=self.n_groups)
+        self.sums.index_add_(0, groups, value.to(self.sums.dtype))
+        self.counts.index_add_(0, groups, torch.ones_like(groups))
 
     def compute(self) -> Tensor:  # noqa: D102
         mask = self.counts > 0

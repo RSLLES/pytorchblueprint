@@ -38,9 +38,12 @@ def train_one_epoch(
     optimizer.zero_grad()
 
     # the per-step values only drive the progress bar; syncing them would add one
-    # all-gather per metric per optimizer step
+    # all-gather per metric per optimizer step. The NaN check would wait for the GPU,
+    # and a NaN must reach divergence detection anyway.
     step_metrics = LazyMetricCollection(
-        lambda: MeanMetric(sync_on_compute=False).to(device=fabric.device)
+        lambda: MeanMetric(sync_on_compute=False, nan_strategy="disable").to(
+            device=fabric.device
+        )
     )
     epoch_metrics = LazyMetricCollection(
         lambda: MedianOfMeans(n_groups=MedianOfMeans.recommended_n_groups(n_steps)).to(
@@ -55,12 +58,11 @@ def train_one_epoch(
         with profiler.Profiler(disable=not enable_profiling) as prof:
             for batch_idx, batch in enumerate(dl):
                 is_accumulating = (batch_idx + 1) % n_accum_steps != 0
-                batch["step"] = torch.tensor(step, device=fabric.device)
-                batch["n_batches"] = torch.tensor(
-                    len(dl) * fabric.world_size, device=fabric.device
-                )
+                # on the CPU: creating them on the GPU would wait for it every step
+                batch["step"] = torch.tensor(step)
+                batch["n_batches"] = torch.tensor(len(dl) * fabric.world_size)
                 progress = min(1.0, step / total_steps) if total_steps > 0 else 1.0
-                batch["progress"] = torch.tensor(progress, device=fabric.device)
+                batch["progress"] = torch.tensor(progress)
 
                 with fabric.no_backward_sync(training_module, enabled=is_accumulating):
                     metrics = training_module(batch)
@@ -85,8 +87,10 @@ def train_one_epoch(
                     metrics[f"lr{i}"] = lr
                 scheduler.step()
 
-                bar.set_text(utils.format.format_metrics({"step": step} | metrics))
-                bar.update(1)
+                # formatting reads the metrics from the GPU and is slow: only do it
+                # when the bar redraws
+                if bar.update(1):
+                    bar.set_text(utils.format.format_metrics({"step": step} | metrics))
                 prof.step()
                 step += 1
                 step_metrics.reset()

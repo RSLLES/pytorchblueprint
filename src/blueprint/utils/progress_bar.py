@@ -78,18 +78,19 @@ class WrappedTextProgressBar:
         for i in range(max(len(lines), len(self._desc_bars))):
             self._desc_bar(i).set_description_str(lines[i] if i < len(lines) else "")
 
-    def update(self, n: int = 1) -> None:
-        """Update progress by n steps."""
+    def update(self, n: int = 1) -> bool:
+        """Update progress by n steps; return whether the bar was redrawn."""
         if self._disable:
-            return
-        self._pbar.update(n)
+            return False
+        redrawn = bool(self._pbar.update(n))
         if self._clock is None:
-            return
+            return redrawn
         self._clock.count_step(n)
         eta = self._clock.eta()
         if eta is not None:
             # refreshing here would render on every step, bypassing tqdm's mininterval
             self._pbar.set_description_str(f"ETA {eta}", refresh=False)
+        return redrawn
 
     def __enter__(self) -> "WrappedTextProgressBar":
         return self
