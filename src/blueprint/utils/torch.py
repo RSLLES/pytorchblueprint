@@ -36,6 +36,6 @@ def reduce(x: Tensor, dim: int, mode: str) -> Tensor:
     if mode == "max":
         return x.amax(dim=dim)
     raise ValueError(
-        f"Unsupported reduction mode: {mode}."
+        f"Unsupported reduction mode: {mode}. "
         "Use 'none' | 'mean' | 'sum' | 'min' | 'max'."
     )

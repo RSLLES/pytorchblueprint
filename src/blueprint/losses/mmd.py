@@ -27,6 +27,8 @@ arXiv preprint.
 https://arxiv.org/abs/2502.20755
 """
 
+import math
+
 import torch
 from torch import Tensor, nn
 from torch.utils.checkpoint import checkpoint
@@ -87,7 +89,9 @@ def mmd_fuse(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     xy = torch.cat([x, y], dim=1)
     K = kernel(xy, xy, reduction="none")
     n_kernels = torch.tensor(K.size(-1), device=K.device, dtype=K.dtype)
-    lambd = torch.sqrt(n_kernels * (n_kernels - 1.0))
+    # [2] takes lambda = sqrt(n(n-1)), n being the smaller sample size
+    n_samples = min(x.size(1), y.size(1))
+    lambd = math.sqrt(n_samples * (n_samples - 1))
 
     mmd_sq = _mmd_sq(K, N)
 
