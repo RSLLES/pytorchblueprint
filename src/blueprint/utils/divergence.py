@@ -7,13 +7,18 @@ import torch
 from torch import Tensor
 
 
-def detect_divergence(loss_history: list[Tensor], rtol: float = 10.0, window: int = 7):
+def detect_divergence(
+    loss_history: list[Tensor],
+    rtol: float = 10.0,
+    min_rel_jump: float = 0.1,
+    window: int = 7,
+) -> bool:
     """Detect divergence based on loss spikes over recent history."""
     if len(loss_history) == 0:
         return False
 
     last = loss_history[-1]
-    if torch.isnan(last):
+    if not torch.isfinite(last):
         return True
 
     if len(loss_history) < window:
@@ -23,5 +28,5 @@ def detect_divergence(loss_history: list[Tensor], rtol: float = 10.0, window: in
     med = torch.quantile(ref, q=0.5)
     mad = torch.quantile(torch.abs(ref - med), q=0.5)
 
-    diverge = last > med + rtol * mad
-    return diverge.item()
+    # The jump must also be material: a flat history has a null MAD.
+    return bool(last - med > torch.maximum(rtol * mad, min_rel_jump * med.abs()))
