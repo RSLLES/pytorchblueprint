@@ -1,83 +1,61 @@
 # Working agreement
 
-Prefer correctness, readability, and the smallest coherent change.
-Keep designs simple, short and easy to modify (KISS).
+Keep everything simple (KISS). You tend to over-engineer: resist it.
+Prefer, in this order: correctness, readability, the smallest coherent change.
+Be concise when you write or code, never hasty when you think: weigh the pros and cons of what you propose and the meaning of what you claim.
 
-## Workflow
+## Writing
+- Ce que l'on conçoit bien s'énonce clairement (Boileau): when a sentence won't come out clear, rethink instead of rephrasing.
+- Le mot juste (Flaubert): pick the word, or the name in code, that says exactly what you mean.
+- Omit needless words (Strunk): cut any word whose removal leaves the meaning intact. Lead with the essential.
 
-- Read relevant code, callers, and tests before editing; investigate discoverable facts before asking.
-- In auto-mode, For nontrivial work, state a checkable goal and short `step -> check` plan. 
-- Skip ceremony for trivial edits.
-- Search narrowly with `rg`; read relevant sections and bound noisy output.
-- Flag concrete design concerns or a substantially simpler approach before coding.
+## Before coding
+- For any non-trivial change, research broadly: the relevant code and the literature (documentation, papers, how others solved it). Good research saves hours of debugging.
+- Keep your context clean: targeted searches, relevant sections, bounded output.
+- Flag concrete design concerns or a substantially simpler approach.
+- Ask me about missing requirements and about choices that are both important and non-obvious, with the trade-offs and your uncertainty. Stating an assumption is not asking.
+
+## Code
+- Perfection is reached not when nothing can be added, but when nothing can be removed (Saint-Exupéry): add nothing speculative; remove what your change makes unused.
+- Match the existing style; make no unrelated changes.
+- Don't reinvent the wheel: prefer the standard library and the project's dependencies to writing your own.
+- Let errors surface: no swallowed exceptions, silent fallbacks, or retries unless I ask for them.
+- Functions and simple records first. A class must hold cohesive state, own a resource, or implement an interface. Prefer composition to inheritance.
+- Prefer pure functions; keep I/O and shared state at the boundaries. Local mutation is fine when clearer or materially cheaper.
+- Extract a function only for a distinct responsibility, clearer reasoning, or reuse; no pass-through helpers or needless indirection.
+- Group parameters only around a domain concept. Never add an abstraction just to meet a size or nesting limit.
+- Early returns, straightforward control flow, no needless metaprogramming.
+- Names: one concept, one name; conventional when a convention exists; no opaque abbreviations.
+- Annotate new or changed Python functions with precise types in modern syntax. Use `Any` only when unavoidable; never hide a type error with a cast or an ignore.
+- Let names, types, and structure carry the intent. Comment only non-obvious constraints, contracts, or reasons: no narration, banners, commented-out code, or edit notes. Fix comments your change makes false.
+- Public functions and methods get a one-line docstring, nothing more.
+
+## Verification
+- Use `uv`: `uv run pytest` (affected tests first), `uv run ruff check <changed files>`, `uv run ruff format <changed files>`, `uv run ty check`.
+- For a bug, when practical, write a regression test first and watch it fail for the right reason.
+- Test observable behavior, not implementation details. Never weaken a check to conceal a defect.
+- Report failures that predate your change; never fix them silently.
+- Before reporting, review the diff and re-run checks on the final code.
+- Claim only what you ran or read, and point to it (output, file:line).
+
+## When stuck
+- Your own reasoning biases you: seek an outside view. Give a fresh subagent the problem and the evidence, not your hypotheses, and ask for the simplest solutions.
 - After two failed approaches to the same problem, stop and report.
-- Run jobs longer than a few minutes in the background with one waiter that exits when all jobs end (success, failure, or timeout) and prints a short summary. Don't poll while it runs.
 
-## Ask
+## Subagents
+- Delegate bounded, independent exploration or review when the context saved or the parallelism outweighs the overhead; keep small lookups and tightly coupled implementation local. At most 3 at once.
+- Haiku for straightforward retrieval, Sonnet or Opus for investigation and review; re-check doubtful findings with a stronger model.
+- You own synthesis and verification: read the decisive evidence yourself.
 
-- Ask when missing requirements or unresolved choices could materially affect scope, behavior, architecture, compatibility, or data safety. 
-- Stating an assumption does not replace asking me.
-- Explain the uncertainty and tradeoffs; recommend an option when useful.
-- Handle routine implementation details within agreed requirements.
-  Skip tutorials and questions about settled decisions.
+## Plans
+- Write plans a fresh session can execute alone: stakes, my decisions and their reasons, what is ruled out, `step -> check` steps, what to report.
+- Before presenting, have an Opus subagent read only the plan and the repo and report gaps. Fix them, repeat until none remain, and ask me about unsettled decisions.
 
-## Plan
-
-- In plan mode, write plans a fresh session can execute alone. Include stakes, my decisions with reasons, what is ruled out, `step -> check`, what to report.
-- Before presenting, have an Opus subagent read only the plan and repo, and list what it cannot determine.
-- Fix the gaps that would change the work or how results are read; ask me about those only I can answer. Repeat until none remain.
-
-## Delegate
-
-- Delegate bounded, independent exploration or review to subagents when context savings or parallelism justify the overhead; keep small lookups and tightly coupled implementation local.
-- Never more than 3 subagents at once.
-- Use available lightweight (Haiku) models for straightforward retrieval and stronger models (Sonnet / Opus) for complex investigation or review; re-check uncertain findings with a stronger model.
-- Default workers to read-only. Provide a bounded question, scope, and constraints; require concise findings, file references, and uncertainty.
-- The main agent owns synthesis, integration, discussion with me, and verification; inspect decisive evidence directly.
-- Avoid duplicate exploration and overlapping edits.
-
-## Scope
-
-- Fix the cause within scope, including necessary callers and tests.
-- Match existing style; avoid unrelated refactoring or formatting. 
-- Remove what your change makes unused.
-- No speculative features, configuration, or extension points.
-- Prefer existing dependencies and the standard library.
-- Validate external inputs and handle credible boundary failures. Do not hide errors or add
-  speculative fallbacks, retries, logging, or redundant internal checks.
-
-## Design
-
-- Functions and simple records first. Classes need cohesive state, resource ownership,
-  or a meaningful interface. Prefer composition to inheritance.
-- Prefer pure computation with explicit inputs and outputs; keep I/O and shared mutation
-  at boundaries. Local mutation is fine when clearer or materially cheaper.
-- Keep dependencies explicit and cohesive code together. Extract functions for a clear responsibility, simpler reasoning, or reuse; avoid pass-through helpers and unnecessary indirection.
-- Prefer early returns and straightforward loops. Group parameters only around a real domain concept; do not invent abstractions to meet size or nesting quotas.
-- Keep critical checks easy to trace; avoid unnecessary metaprogramming and hidden control flow.
-
-## Names, types, and documentation
-
-- Use precise domain names: one concept, one term. Prefer readable words to opaque abbreviations. Use conventional names when available.
-- Annotate parameters and returns in new or changed Python functions with precise types
-  and modern syntax supported by the project's Python version. Prefer precise types; confine `Any` to unavoidable scenarios. Do not hide type errors with unjustified casts or suppressions.
-- The code expresses its intent. Let names, types, and structure explain the code. Do not add verbose comments: confine them to explain non-obvious constraints, contracts, or reasons; omit narration, banners, commented-out code, and edit notes.
-- Give public Python functions and methods one-line summary docstrings. Private helpers (`_name`) may omit them. Do not repeat signatures or add parameter/return sections.
-- Leave unrelated comments alone; correct any your change makes false.
-
-## Tools and verification
-
-- Use `uv run` and existing project configuration; do not change dependencies or tooling incidentally.
-- Tests: `uv run pytest`. Lint: `uv run ruff check`. Types: `uv run ty check`.
-- Format with `uv run ruff format`; verify with `uv run ruff format --check`. Scope Ruff commands to changed files; start pytest with affected tests.
-- For bugs, add a regression test when practical; establish that it fails for the relevant
-  reason before the fix, then passes afterward.
-- Test observable behavior, not helper structure. Never weaken checks to conceal a defect.
-- Broaden checks for integration risk or project gates; repeat when code or evidence changes.
-- Report tests or lint failures that existed before your change; never fix them silently.
-- Review the final diff. Report actual check results and blockers; never claim verification you did not perform.
+## Long jobs
+- Run jobs over ~5 min in the background, with one waiter that exits when every job ends (success, failure, or timeout) and prints a short summary. Don't poll.
+- Beyond 1 h, also wake every 58 min for a quick health check: process alive, logs advancing, no NaN. A job can fail without ending; the waiter won't notice, and hours are lost.
 
 ## Git
-
-- Run `git status` first: if the worktree is dirty, work in a new worktree under `.worktrees/`; otherwise, work in place.
-- Never commit, rebase, reset, switch, checkout, or push without my explicit instruction.
+- Start with `git status`. If the worktree is dirty, work in a new worktree under `.worktrees/`, where any git command except remote ones is allowed. Otherwise work in place, and never commit, rebase, reset, switch, or checkout without my instruction.
+- Never push: the remote is mine.
+- One commit per task, with `--no-gpg-sign`; no Claude co-author.
