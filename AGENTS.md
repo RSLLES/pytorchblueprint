@@ -8,6 +8,7 @@ Be concise when you write or code, never hasty when you think: weigh the pros an
 - Ce que l'on conçoit bien s'énonce clairement (Boileau): when a sentence won't come out clear, rethink instead of rephrasing.
 - Le mot juste (Flaubert): pick the word, or the name in code, that says exactly what you mean.
 - Omit needless words (Strunk): cut any word whose removal leaves the meaning intact. Lead with the essential.
+- Think freely, but hold everything you write to these standards: all your replies, docstrings, comments, documents.
 
 ## Before coding
 - For any non-trivial change, research broadly: the relevant code and the literature (documentation, papers, how others solved it). Good research saves hours of debugging.
@@ -32,8 +33,8 @@ Be concise when you write or code, never hasty when you think: weigh the pros an
 
 ## Verification
 - Use `uv`: `uv run pytest` (affected tests first), `uv run ruff check <changed files>`, `uv run ruff format <changed files>`, `uv run ty check`.
-- For a bug, when practical, write a regression test first and watch it fail for the right reason.
-- Test observable behavior, not implementation details. Never weaken a check to conceal a defect.
+- Ensure found bugs are correct; reproduce them first (e.g. with a throwaway script) before fixing them. 
+- Tests guard the method's correctness, nothing else. Write or keep one only if the defect it catches would silently invalidate results.
 - Report failures that predate your change; never fix them silently.
 - Before reporting, review the diff and re-run checks on the final code.
 - Claim only what you ran or read, and point to it (output, file:line).
