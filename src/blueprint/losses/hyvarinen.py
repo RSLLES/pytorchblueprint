@@ -27,14 +27,12 @@ def hyvarinen_loss(score_net: nn.Module, x: Tensor, reduction: str = "mean") -> 
     input_dim = x.shape[-1]
     x = x.view(-1, input_dim)
 
-    def single_score_fn(x_i):
-        return score_net(x_i.unsqueeze(0)).squeeze(0)
+    def single_score_fn(x_i: Tensor) -> tuple[Tensor, Tensor]:
+        score = score_net(x_i.unsqueeze(0)).squeeze(0)
+        return score, score
 
-    jac_fn = jacrev(single_score_fn)
-    batched_jac_fn = vmap(jac_fn)
-    score = score_net(x)
+    jacobians, score = vmap(jacrev(single_score_fn, has_aux=True))(x)
     norm_sq = 0.5 * (score**2).sum(dim=1)
-    jacobians = batched_jac_fn(x)
     trace = jacobians.diagonal(dim1=-2, dim2=-1).sum(dim=-1)
     loss = norm_sq + trace
     loss = loss.view(batch_shape)
