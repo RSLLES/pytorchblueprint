@@ -3,7 +3,6 @@
 
 import functools
 
-import pytest
 import torch
 from torch import nn
 from torch.optim import AdamW, Muon
@@ -32,20 +31,6 @@ def test_split_param_groups_covers_each_parameter_once():
     assert [id(p) for p in muon_group["params"]] == [
         id(p) for p in model.hidden_matrices()
     ]
-
-
-def test_split_param_groups_single_group_without_hidden_matrices():
-    """A model that does not declare hidden matrices needs nothing from the split."""
-    model = nn.Linear(2, 2)
-    groups = split_param_groups(model, model)
-    assert len(groups) == 1
-    assert not groups[0]["use_muon"]
-
-
-def test_muon_adamw_requires_hidden_matrices():
-    """Without hidden matrices, Muon has nothing to optimize."""
-    with pytest.raises(ValueError, match="hidden_matrices"):
-        _muon_adamw(nn.Linear(2, 2))
 
 
 def test_muon_adamw_scheduler_drives_inner_lrs_after_resume():

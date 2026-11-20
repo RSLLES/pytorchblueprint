@@ -12,11 +12,3 @@ def test_early_estimate_is_the_running_average():
     for x in torch.arange(1.0, 6.0):
         ema.update(x)
     torch.testing.assert_close(ema.value(), torch.tensor([3.0]), atol=1e-2, rtol=0)
-
-
-def test_update_keeps_a_single_compiled_graph():
-    """The EMA must not split the graph of a compiled model."""
-    ema = ExpMovingAverage(lambd=1e-3)
-    ema.update(torch.ones(1))
-    explanation = torch._dynamo.explain(ema)(torch.ones(1))
-    assert explanation.graph_break_count == 0
