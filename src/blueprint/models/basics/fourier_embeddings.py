@@ -12,7 +12,8 @@ class FourierEmbeddings(nn.Module):
 
     def __init__(self, input_dim: int, embed_dim: int, scale: float = 1.0):
         super().__init__()
-        assert embed_dim % 2 == 0
+        if embed_dim % 2 != 0:
+            raise ValueError(f"embed_dim must be even, got {embed_dim}.")
         angular_freqs = scale * 2 * torch.pi * torch.randn(input_dim, embed_dim // 2)
         self.register_buffer("angular_freqs", angular_freqs)
 
