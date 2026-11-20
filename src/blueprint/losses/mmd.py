@@ -56,6 +56,15 @@ def _mmd_sq(K: Tensor, n: int) -> Tensor:
     return K_xx + K_yy - 2.0 * K_xy
 
 
+def _unbiased_mmd_sq(K: Tensor, n: int) -> Tensor:
+    """Unbiased squared MMD from the kernel matrix of [x; y], diagonal zeroed."""
+    m = K.size(1) - n
+    K_xx = K[:, :n, :n].sum(dim=(1, 2)) / (n * (n - 1))
+    K_yy = K[:, n:, n:].sum(dim=(1, 2)) / (m * (m - 1))
+    K_xy = K[:, :n, n:].mean(dim=(1, 2))
+    return K_xx + K_yy - 2.0 * K_xy
+
+
 def mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     """Return the (biased) MMD between x and y given a kernel."""
     _check_inputs(x, y)
@@ -88,14 +97,16 @@ def mmd_fuse(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tensor:
     N = x.size(1)
     xy = torch.cat([x, y], dim=1)
     K = kernel(xy, xy, reduction="none")
+    off_diagonal = ~torch.eye(K.size(1), dtype=torch.bool, device=K.device)
+    K = K * off_diagonal[:, :, None]
     n_kernels = torch.tensor(K.size(-1), device=K.device, dtype=K.dtype)
     # [2] takes lambda = sqrt(n(n-1)), n being the smaller sample size
     n_samples = min(x.size(1), y.size(1))
     lambd = math.sqrt(n_samples * (n_samples - 1))
 
-    mmd_sq = _mmd_sq(K, N)
+    mmd_sq = _unbiased_mmd_sq(K, N)
 
-    std = K.square().mean(dim=(1, 2)).sqrt()
+    std = (K.square().sum(dim=(1, 2)) / (n_samples * (n_samples - 1))).sqrt()
     mmd_norm = mmd_sq / (std + 1e-9)
     mmd_fused = (torch.logsumexp(lambd * mmd_norm, dim=-1) - n_kernels.log()) / lambd
     return reduce(mmd_fused, dim=0, mode=reduction)
