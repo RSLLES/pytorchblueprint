@@ -21,14 +21,14 @@ class ExpMovingAverage(nn.Module):
     weighted_sum: Tensor
     total_weight: Tensor
 
-    def __init__(self, lambd: float, n_elements: int = 1) -> None:
+    def __init__(self, lambd: float, n_elements: int = 1):
         super().__init__()
         self.lambd = lambd
         self.register_buffer("weighted_sum", torch.zeros((n_elements,)))
         self.register_buffer("total_weight", torch.zeros(()))
 
     @torch.no_grad()
-    def update(self, x: Tensor) -> None:
+    def update(self, x: Tensor):
         """Update the current ema."""
         x_synced = reduce_across_ranks(x)
         self.weighted_sum.mul_(1.0 - self.lambd).add_(x_synced, alpha=self.lambd)

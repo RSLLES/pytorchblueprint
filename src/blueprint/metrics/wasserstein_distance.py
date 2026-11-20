@@ -29,7 +29,7 @@ class WassersteinDistance(Metric):
         self.add_state("x_target", default=[], dist_reduce_fx="cat")
         self.p = p
 
-    def update(self, x_pred: Tensor, x_target: Tensor) -> None:  # noqa: D102
+    def update(self, x_pred: Tensor, x_target: Tensor):  # noqa: D102
         self.x_pred.append(x_pred)
         self.x_target.append(x_target)
 

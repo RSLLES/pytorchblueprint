@@ -56,7 +56,7 @@ class LOOReinforce(nn.Module):
         self.ensure_detached_loss = ensure_detached_loss
         self.eps = eps
 
-    def forward(self, losses: Tensor, log_prob: Tensor):  # noqa: D102
+    def forward(self, losses: Tensor, log_prob: Tensor) -> Tensor:  # noqa: D102
         if losses.ndim != 1:
             raise ValueError(f"Expect 1D tensor for losses, got {losses.shape}")
         if losses.size(0) < 3:

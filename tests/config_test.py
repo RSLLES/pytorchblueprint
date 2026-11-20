@@ -13,7 +13,7 @@ from blueprint import utils
 
 
 @pytest.mark.parametrize("world_size", [1, 2])
-def test_total_steps_matches_dataloader_steps(world_size):
+def test_total_steps_matches_dataloader_steps(world_size: int):
     """Total steps count the optimizer steps the per-rank dataloaders really take."""
     n_samples = 1000
     cfg = OmegaConf.create(
@@ -32,7 +32,7 @@ def test_total_steps_matches_dataloader_steps(world_size):
     "config_name",
     ["flowmatching", "momentmatching", "scorematching", "wassersteinmatching"],
 )
-def test_datasets_get_distinct_seeds(config_name):
+def test_datasets_get_distinct_seeds(config_name: str):
     """Source and target of a split, and the val and test sets, never share a seed."""
     config_dir = Path(__file__).parents[1] / "configs"
     with initialize_config_dir(config_dir=str(config_dir), version_base=None):

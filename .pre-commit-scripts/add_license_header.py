@@ -10,7 +10,7 @@ HEADER_LINES = [
 HEADER_BLOCK = "\n".join(HEADER_LINES) + "\n\n"
 
 
-def is_header(lines):
+def is_header(lines: list[str]) -> bool:
     """Check if the lines exactly match the HEADER_LINES."""
     if len(lines) != len(HEADER_LINES):
         return False
@@ -20,7 +20,7 @@ def is_header(lines):
     return True
 
 
-def check_and_add_header(filepath):
+def check_and_add_header(filepath: str) -> bool:
     """Check if a file has a header; add it otherise. Return True if file was edited."""
     try:
         with open(filepath, encoding="utf-8") as f:

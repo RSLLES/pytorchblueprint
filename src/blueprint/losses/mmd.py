@@ -36,7 +36,7 @@ from torch.utils.checkpoint import checkpoint
 from blueprint.utils.torch import reduce
 
 
-def _check_inputs(x: Tensor, y: Tensor, min_samples: int = 2) -> None:
+def _check_inputs(x: Tensor, y: Tensor, min_samples: int = 2):
     if x.ndim != 3 or y.ndim != 3:
         raise ValueError(f"Expected 3D tensors [B, N, D], got {x.shape},{y.shape}.")
     if x.size(0) != y.size(0) or x.size(-1) != y.size(-1):

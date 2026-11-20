@@ -40,7 +40,7 @@ class MuonAdamW(Optimizer):
         params: Iterable[dict[str, Any]],
         muon: Callable[..., Muon],
         adamw: Callable[..., AdamW],
-    ) -> None:
+    ):
         groups = list(params)
         muon_groups = [g for g in groups if g["use_muon"]]
         if not muon_groups:
@@ -62,7 +62,7 @@ class MuonAdamW(Optimizer):
     def state_dict(self) -> dict[str, Any]:  # noqa: D102
         return {"muon": self.muon.state_dict(), "adamw": self.adamw.state_dict()}
 
-    def load_state_dict(self, state_dict: dict[str, Any]) -> None:  # noqa: D102
+    def load_state_dict(self, state_dict: dict[str, Any]):  # noqa: D102
         self.muon.load_state_dict(state_dict["muon"])
         self.adamw.load_state_dict(state_dict["adamw"])
         # the inner loads replace their group dicts, which the scheduler must reach

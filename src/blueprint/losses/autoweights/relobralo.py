@@ -32,7 +32,7 @@ class ReLoBRaLo(nn.Module):
         beta: float = 0.999,
         temperature: float = 1.0,
         eps: float = 1e-9,
-    ) -> None:
+    ):
         super().__init__()
         self.n_losses = n_losses
         self.alpha = alpha

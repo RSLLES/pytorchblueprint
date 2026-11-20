@@ -5,7 +5,7 @@ import torch
 from torch import Tensor
 
 
-def _check_shapes(a: Tensor, b: Tensor, M: Tensor) -> None:
+def _check_shapes(a: Tensor, b: Tensor, M: Tensor):
     if a.ndim != 2 or b.ndim != 2 or M.ndim != 3:
         raise ValueError(
             "Expected marginals a [B, N], b [B, K] and costs M [B, N, K], "

@@ -50,7 +50,7 @@ class KLLOnlineQuantile(Metric):
             "levels", default=torch.empty(0, dtype=torch.long), dist_reduce_fx="cat"
         )
 
-    def update(self, x: Tensor) -> None:  # noqa: D102
+    def update(self, x: Tensor):  # noqa: D102
         x = x.reshape(-1, 1) if x.ndim == 1 else x.reshape(-1, x.size(-1))
         self.values = torch.cat([self.values, x])
         self.levels = torch.cat([self.levels, x.new_zeros(x.size(0), dtype=torch.long)])
@@ -84,7 +84,7 @@ class KLLOnlineQuantile(Metric):
         counts = self.levels.bincount()
         return next(h for h in range(len(counts)) if counts[h] >= self._capacity(h))
 
-    def _compact(self, h: int) -> None:
+    def _compact(self, h: int):
         at_h = self.levels == h
         block = self.values[at_h].sort(dim=0).values
         m = block.size(0) - (block.size(0) & 1)

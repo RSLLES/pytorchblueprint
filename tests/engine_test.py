@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from pathlib import Path
+
 import pytest
 import torch
 from lightning.fabric import Fabric
@@ -28,7 +30,9 @@ class _ScriptedLoss(nn.Module):
 
 
 @pytest.mark.parametrize(("strategy", "expected_epoch"), [("min", 1), ("max", 0)])
-def test_best_checkpoint_follows_strategy(tmp_path, strategy, expected_epoch):
+def test_best_checkpoint_follows_strategy(
+    tmp_path: Path, strategy: str, expected_epoch: int
+):
     """The best checkpoint holds the epoch that is best under the watched strategy."""
     fabric = Fabric(accelerator="cpu", devices=1)
     model = MomentNet(input_dim=2, inner_dim=8)

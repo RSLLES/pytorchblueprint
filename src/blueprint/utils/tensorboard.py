@@ -10,7 +10,7 @@ import pandas as pd
 from tensorboard.backend.event_processing import event_accumulator
 
 
-def find_events_file(dirpath: str):
+def find_events_file(dirpath: str) -> str:
     """Return the path to the single events.out.tfevents.* file in dirpath."""
     pattern = re.compile(r"^events\.out\.tfevents\..*")
     matches = [f for f in os.listdir(dirpath) if pattern.match(f)]

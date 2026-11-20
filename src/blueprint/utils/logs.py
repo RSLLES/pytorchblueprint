@@ -24,7 +24,7 @@ def _get_next_version(root_path: str, prefix: str) -> int:
     return max((int(m[1]) for m in matches if m), default=-1) + 1
 
 
-def write_file(content: str, filename: str, log_dir: str) -> None:
+def write_file(content: str, filename: str, log_dir: str):
     """Write the content to a new file in log_dir; raise if the file exists."""
     os.makedirs(log_dir, exist_ok=True)
     path = os.path.join(log_dir, filename)

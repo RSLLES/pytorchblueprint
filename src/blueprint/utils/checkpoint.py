@@ -47,7 +47,7 @@ def save_training(
     model: Module,
     optimizer: Optimizer,
     scheduler: LRScheduler,
-) -> None:
+):
     """Save training state to a checkpoint file."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     state = {

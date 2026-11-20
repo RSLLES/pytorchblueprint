@@ -32,8 +32,11 @@ build-backend = "setuptools.build_meta"
 package-dir = {"" = "src"}
 
 [tool.ruff.lint]
-select = ["D", "I", "W", "E", "F", "UP", "B"]
-ignore = ["D100", "D104", "D105", "D107", "D203", "D213"]
+select = ["D", "I", "W", "E", "F", "UP", "B", "ANN"]
+ignore = ["ANN401", "D100", "D104", "D105", "D107", "D203", "D213"]
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
 
 [tool.uv.sources]
 torch = [{ index = "pytorch_index" }]

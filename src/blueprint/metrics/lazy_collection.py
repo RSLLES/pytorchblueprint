@@ -12,11 +12,11 @@ from torchmetrics import Metric, MetricCollection
 class LazyMetricCollection(MetricCollection):
     """A MetricCollection whose keys appear on first update."""
 
-    def __init__(self, metric_factory: Callable[[], Metric]) -> None:
+    def __init__(self, metric_factory: Callable[[], Metric]):
         super().__init__({}, compute_groups=False)
         self._metric_factory = metric_factory
 
-    def update(self, values: Mapping[str, Any]) -> None:  # ty:ignore[invalid-method-override]  # noqa: D102
+    def update(self, values: Mapping[str, Any]):  # ty:ignore[invalid-method-override]  # noqa: D102
         for key, value in values.items():
             if key not in self:
                 self.add_metrics({key: self._metric_factory()})

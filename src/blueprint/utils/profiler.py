@@ -6,6 +6,8 @@
 import os
 import sys
 from datetime import datetime
+from types import TracebackType
+from typing import Self
 
 import torch
 
@@ -14,7 +16,10 @@ class Profiler:
     """Wrapper around torch.profiler with auto-saving and default scheduling."""
 
     def __init__(
-        self, dirpath="traces/", disable: bool = False, exit_when_done: bool = True
+        self,
+        dirpath: str = "traces/",
+        disable: bool = False,
+        exit_when_done: bool = True,
     ):
         self.exit_when_done = exit_when_done
         self.dirpath = dirpath
@@ -34,7 +39,7 @@ class Profiler:
                 on_trace_ready=self._trace_handler,
             )
 
-    def _trace_handler(self, p):
+    def _trace_handler(self, p: torch.profiler.profile):
         """Handle to match torch.profiler's signature expectation."""
         os.makedirs(self.dirpath, exist_ok=True)
         filename = datetime.now().strftime("%FT%X") + ".json"
@@ -55,12 +60,17 @@ class Profiler:
         if self.prof is not None:
             self.prof.step()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         if self.prof is not None:
             self.prof.__enter__()
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ):
         if self.prof is not None:
             self.prof.__exit__(exc_type, exc_value, traceback)
 
@@ -73,7 +83,7 @@ class MemoryProfiler:
 
     def __init__(
         self, prefix: str = "memory", disable: bool = False, exit_when_done: bool = True
-    ) -> None:
+    ):
         """Set up profiler with a prefix and options."""
         timestamp = datetime.now().strftime("%FT%X")
         self.filename = f"{prefix}_{timestamp}.pickle"
@@ -86,7 +96,12 @@ class MemoryProfiler:
             return
         torch.cuda.memory._record_memory_history(max_entries=100_000)
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ):
         """Dump snapshot and stop recording; exit program if requested."""
         if self.disable:
             return

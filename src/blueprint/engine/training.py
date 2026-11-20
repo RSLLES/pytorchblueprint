@@ -179,7 +179,7 @@ def train(
     return best_metric
 
 
-def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int) -> None:
+def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int):
     for key, value in logs.items():
         if isinstance(value, Tensor) and value.nelement() > 1:
             logger.add_tensor(tag=key, tensor=value, global_step=step)

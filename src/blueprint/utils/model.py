@@ -16,12 +16,12 @@ def count_parameters(model: nn.Module) -> int:
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def present_model(model: nn.Module) -> None:
+def present_model(model: nn.Module):
     """Print the model name and its trainable parameter count."""
     print(f"Model '{model._get_name()}'; {count_parameters(model):,} parameters.")
 
 
-def explain_model(model: nn.Module, dl: DataLoader, fabric: Fabric) -> None:
+def explain_model(model: nn.Module, dl: DataLoader, fabric: Fabric):
     """Run torch._dynamo.explain to inspect Dynamo's compilation process."""
     if fabric.is_global_zero:
         print("Running torch._dynamo.explain...")

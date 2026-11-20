@@ -3,6 +3,7 @@
 
 """Utility decorator to detect OOM and restart training with a reduced batch size."""
 
+from collections.abc import Callable
 from functools import wraps
 
 import torch
@@ -19,7 +20,7 @@ def is_oom(error: BaseException) -> bool:
     return "out of memory" in str(error) or "OOM" in str(error)
 
 
-def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool) -> None:
+def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool):
     """Turn a one-rank OOM into an every-rank one, so the retry stays collective."""
     votes = torch.tensor(float(local_oom), device=fabric.device)
     n_oom = int(fabric.all_reduce(votes, reduce_op="sum"))
@@ -27,19 +28,21 @@ def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool) -> None:
         raise DistributedOutOfMemory(f"out of memory on {n_oom} of the ranks.")
 
 
-def handle_oom(cfg_attr_name="cfg"):
+def handle_oom[**P, R](
+    cfg_attr_name: str = "cfg",
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Handle out-of-memory errors by retrying with reduced batch size."""
 
-    def decorator(func):
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             cfg = kwargs.get(cfg_attr_name)
             if cfg is None:
                 for arg in args:
                     if isinstance(arg, DictConfig):
                         cfg = arg
                         break
-            if cfg is None:
+            if not isinstance(cfg, DictConfig):
                 raise ValueError("DictConfig not found in arguments.")
 
             cfgr = cfg.runtime

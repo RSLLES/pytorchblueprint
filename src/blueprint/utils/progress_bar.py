@@ -13,12 +13,12 @@ from blueprint.utils import format
 class TrainingClock:
     """Measure the run's step rate, ignoring the first step's one-off compile cost."""
 
-    def __init__(self, steps_left: int) -> None:
+    def __init__(self, steps_left: int):
         self.steps_left = steps_left
         self._t_first_step: float | None = None
         self._steps_timed = 0
 
-    def count_step(self, n: int = 1) -> None:
+    def count_step(self, n: int = 1):
         """Record n finished steps; the run's first one only starts the clock."""
         self.steps_left -= n
         if self._t_first_step is None:
@@ -47,7 +47,7 @@ class WrappedTextProgressBar:
         total: int,
         clock: TrainingClock | None = None,
         disable: bool = False,
-    ) -> None:
+    ):
         """Initialize a progress bar, with an optional whole-run clock for the ETA."""
         self._disable = disable
         self._clock = clock
@@ -67,7 +67,7 @@ class WrappedTextProgressBar:
             )
         return self._desc_bars[i]
 
-    def set_text(self, text: str) -> None:
+    def set_text(self, text: str):
         """Set and wrap text to display below the progress bar."""
         if self._disable:
             return
@@ -95,7 +95,7 @@ class WrappedTextProgressBar:
     def __enter__(self) -> "WrappedTextProgressBar":
         return self
 
-    def __exit__(self, *exc) -> None:
+    def __exit__(self, *exc: object):
         for bar in self._desc_bars:
             bar.close()
         self._pbar.close()

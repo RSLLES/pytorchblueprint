@@ -5,6 +5,7 @@
 
 import contextlib
 import sys
+from collections.abc import Callable, Generator
 
 from lightning.fabric import Fabric
 from lightning.fabric.connector import _is_using_cli
@@ -15,7 +16,7 @@ def initialize_fabric(
     precision: str = "32-true",
     devices: str | int = "auto",
     find_unused_parameters: bool = False,
-):
+) -> Fabric:
     """Initialize a Fabric instance with the given seed and devices."""
     strategy = "ddp_find_unused_parameters_true" if find_unused_parameters else "auto"
     fabric = Fabric(devices=devices, precision=precision, strategy=strategy)
@@ -26,7 +27,10 @@ def initialize_fabric(
 
 
 @contextlib.contextmanager
-def global_zero_context(ctx_manager_factory, fabric: Fabric):
+def global_zero_context[T](
+    ctx_manager_factory: Callable[[], contextlib.AbstractContextManager[T]],
+    fabric: Fabric,
+) -> Generator[T | None]:
     """Wrap a context manager so it only activates on global zero device."""
     if fabric.is_global_zero:
         with ctx_manager_factory() as ctx:

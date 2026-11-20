@@ -10,7 +10,7 @@ from omegaconf import DictConfig, OmegaConf
 from blueprint.utils.git import get_head_commit_hash
 
 
-def initialize_config(cfg: DictConfig):
+def initialize_config(cfg: DictConfig) -> DictConfig:
     """Initialize configuration with resolvers and git commit hash."""
     OmegaConf.set_struct(cfg, False)
     if not OmegaConf.has_resolver("pow2"):
@@ -21,7 +21,7 @@ def initialize_config(cfg: DictConfig):
     return cfg
 
 
-def add_eff_batch_size(cfg: DictConfig, world_size: int):
+def add_eff_batch_size(cfg: DictConfig, world_size: int) -> DictConfig:
     """Compute effective batch size and assign to configuration."""
     cfg.runtime.eff_batch_size = (
         cfg.runtime.batch_size * world_size * cfg.runtime.n_accum_steps

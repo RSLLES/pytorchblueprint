@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import Any
+
 import torch
 
 
@@ -12,10 +14,9 @@ class StackDataset(torch.utils.data.StackDataset):
         for ds in self.datasets.values():
             ds.increment_seed()
 
-    def collate_fn(self, batch):
+    def collate_fn(self, batch: list[dict[str, Any]]) -> dict[str, Any]:
         """Collate each dataset with its own collate function."""
-        batch = {
+        return {
             key: ds.collate_fn([e[key] for e in batch])
             for key, ds in self.datasets.items()
         }
-        return batch

@@ -45,7 +45,7 @@ def derive_new_seed(seed: int | Tensor) -> int | Tensor:
 
 
 @torch.compiler.disable()
-def derive_new_seed_(seed: Tensor) -> None:
+def derive_new_seed_(seed: Tensor):
     """In-place version of derive_new_seed."""
     gen = get_generator(seed)
     new_seed = torch.randint(

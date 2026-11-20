@@ -5,6 +5,7 @@
 
 import math
 import warnings
+from typing import Any
 
 import torch
 from torch import Tensor
@@ -20,7 +21,7 @@ class MedianOfMeans(Metric):
     sums: Tensor
     counts: Tensor
 
-    def __init__(self, n_groups: int, seed: int = 0, **kwargs):
+    def __init__(self, n_groups: int, seed: int = 0, **kwargs: Any):
         super().__init__(**kwargs)
         if n_groups < 1:
             raise ValueError(f"n_groups must be >= 1, got {n_groups}")
@@ -43,7 +44,7 @@ class MedianOfMeans(Metric):
         """Group count such that failure probability is 1/n_elements."""
         return max(1, math.ceil(8.0 * math.log(n_elements)))
 
-    def update(self, value: float | Tensor) -> None:  # noqa: D102
+    def update(self, value: float | Tensor):  # noqa: D102
         if self._gen is None:
             self._gen = get_generator(self.seed, device=self.device)
         # updated every training step, so it must not wait for the GPU: a blocking
