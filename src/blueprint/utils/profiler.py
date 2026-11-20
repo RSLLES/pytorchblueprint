@@ -71,12 +71,14 @@ class MemoryProfiler:
     Snapshot can be visualized with https://docs.pytorch.org/memory_viz
     """
 
-    def __init__(self, prefix="memory", disable=False, exit_on_done=True):
+    def __init__(
+        self, prefix: str = "memory", disable: bool = False, exit_when_done: bool = True
+    ) -> None:
         """Set up profiler with a prefix and options."""
         timestamp = datetime.now().strftime("%FT%X")
         self.filename = f"{prefix}_{timestamp}.pickle"
         self.disable = disable
-        self.exit_on_done = exit_on_done
+        self.exit_when_done = exit_when_done
 
     def __enter__(self):
         """Start recording GPU memory history."""
@@ -90,5 +92,5 @@ class MemoryProfiler:
             return
         torch.cuda.memory._dump_snapshot(self.filename)
         torch.cuda.memory._record_memory_history(enabled=None)
-        if self.exit_on_done:
+        if self.exit_when_done:
             sys.exit()

@@ -44,7 +44,7 @@ class ReLoBRaLo(nn.Module):
         self.register_buffer("w", torch.ones(n_losses))
         self.register_buffer("initialized", torch.tensor(False))
 
-    @torch.compiler.disable
+    @torch.compiler.disable()
     def _sync_bcast(self, x: Tensor) -> Tensor:
         """Broadcast x from rank 0 so all workers share the same value."""
         if is_distributed():
@@ -57,7 +57,7 @@ class ReLoBRaLo(nn.Module):
         ratios = vals / (anchor + self.eps)
         return self.n_losses * torch.softmax(ratios / self.temperature, dim=0)
 
-    @torch.compiler.disable
+    @torch.compiler.disable()
     def _update(self, vals: Tensor) -> Tensor:
         synced = reduce_across_ranks(vals)
         if not self.initialized:

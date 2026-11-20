@@ -14,10 +14,10 @@ class MomentMatchingTrainer(nn.Module):
         self.model = model
         self.loss_func = mmd_model
 
-    def forward(self, x: dict[str, Tensor]) -> dict[str, Tensor]:
+    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
         """Compute one training step loss for a batch of distributions."""
-        x_source = x["sourcedist"]
-        x_target = x["targetdist"]
+        x_source = batch["sourcedist"]
+        x_target = batch["targetdist"]
         x_pred = self.model(x_source)
         loss = self.loss_func(x_pred[None], x_target[None])
         return {"loss": loss}

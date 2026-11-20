@@ -43,7 +43,7 @@ class NormalDistribution(nn.Module):
         idx = torch.randperm(N, device=z.device)[:n]
         return z.index_select(-2, idx)
 
-    @torch.no_grad
+    @torch.no_grad()
     def compute_bandwidths(self, z1: Tensor, z2: Tensor) -> Tensor:
         """Interpolate bandwidths between 0.5*q05 and 2.0*q95 on subsampled dists."""
         z1_sub = self._subsample(z1)

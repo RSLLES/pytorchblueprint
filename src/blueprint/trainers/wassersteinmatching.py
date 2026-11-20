@@ -18,10 +18,10 @@ class WassersteinMatchingTrainer(nn.Module):
         self.reg = reg
         self.n_iters = n_iters
 
-    def forward(self, x: dict[str, Tensor]) -> dict[str, Tensor]:
+    def forward(self, batch: dict[str, Tensor]) -> dict[str, Tensor]:
         """Compute one training step loss for a batch of distributions."""
-        x_source = x["sourcedist"]
-        x_target = x["targetdist"]
+        x_source = batch["sourcedist"]
+        x_target = batch["targetdist"]
         x_pred = self.model(x_source)
 
         B = x_source.size(0)

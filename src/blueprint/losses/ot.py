@@ -21,13 +21,13 @@ def sinkhorn_knopp(
 
     u = torch.ones_like(a)
     v = torch.ones_like(b)
-    M = torch.exp(-M / reg)
+    K = torch.exp(-M / reg)
 
     for _ in range(n_iters):
-        v = b / (torch.einsum("bij, bi -> bj", M, u) + eps)
-        u = a / (torch.einsum("bij, bj -> bi", M, v) + eps)
+        v = b / (torch.einsum("bij, bi -> bj", K, u) + eps)
+        u = a / (torch.einsum("bij, bj -> bi", K, v) + eps)
 
-    P = u[:, :, None] * M * v[:, None, :]
+    P = u[:, :, None] * K * v[:, None, :]
     return P
 
 
@@ -46,11 +46,11 @@ def sinkhorn_knopp_log(
     log_b = torch.log(b.clip(min=eps))
     u = torch.zeros_like(a)
     v = torch.zeros_like(b)
-    log_M = M / (-reg)
+    log_K = M / (-reg)
 
     for _ in range(n_iters):
-        v = log_b - torch.logsumexp(log_M + u[:, :, None], dim=-2)
-        u = log_a - torch.logsumexp(log_M + v[:, None, :], dim=-1)
+        v = log_b - torch.logsumexp(log_K + u[:, :, None], dim=-2)
+        u = log_a - torch.logsumexp(log_K + v[:, None, :], dim=-1)
 
-    log_P = u[:, :, None] + log_M + v[:, None, :]
+    log_P = u[:, :, None] + log_K + v[:, None, :]
     return torch.exp(log_P)

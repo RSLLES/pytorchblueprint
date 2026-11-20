@@ -8,6 +8,7 @@ from datetime import datetime
 import torch
 from lightning.fabric import Fabric
 from torch import nn
+from torch.utils.data import DataLoader
 
 
 def count_parameters(model: nn.Module) -> int:
@@ -20,11 +21,11 @@ def present_model(model: nn.Module) -> None:
     print(f"Model '{model._get_name()}'; {count_parameters(model):,} parameters.")
 
 
-def explain_model(model: nn.Module, dataloader, fabric: Fabric) -> None:
+def explain_model(model: nn.Module, dl: DataLoader, fabric: Fabric) -> None:
     """Run torch._dynamo.explain to inspect Dynamo's compilation process."""
     if fabric.is_global_zero:
         print("Running torch._dynamo.explain...")
-    batch = next(iter(dataloader))
+    batch = next(iter(dl))
     explanation = torch._dynamo.explain(model)(batch)
     if fabric.is_global_zero:
         filename = "explain_" + datetime.now().strftime("%FT%X") + ".log"

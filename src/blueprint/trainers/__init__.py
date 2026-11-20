@@ -1,7 +1,7 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
-from .flowmatchingtrainer import FlowMatchingTrainer
+from .flowmatching import FlowMatchingTrainer
 from .momentmatching import MomentMatchingTrainer
 from .scorematching import ScoreMatchingTrainer
 from .wassersteinmatching import WassersteinMatchingTrainer
