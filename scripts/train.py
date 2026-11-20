@@ -80,8 +80,9 @@ def train(cfg: DictConfig) -> float:
         utils.fabric.exit_with_barrier(fabric)
 
     epoch, step = 0, 0
+    best_metric, best_epoch = None, None
     if "ckpt_path" in cfgr:
-        epoch, step = utils.checkpoint.load_training(
+        epoch, step, best_metric, best_epoch = utils.checkpoint.load_training(
             fabric=fabric,
             ckpt_path=cfgr.ckpt_path,
             model=training_module,
@@ -105,7 +106,11 @@ def train(cfg: DictConfig) -> float:
     # logs; an OOM retry reruns this function, so the resolved path stays out of cfg
     log_dir = cfgr.get("log_dir")
     tempdir = None
-    if log_dir is None:
+    if "ckpt_path" in cfgr:
+        if log_dir is not None:
+            raise ValueError("A resumed run logs into its checkpoint's directory.")
+        log_dir = os.path.dirname(cfgr.ckpt_path)
+    elif log_dir is None:
         log_dir = utils.logs.get_log_dir(cfgr.name) if fabric.is_global_zero else None
         log_dir = fabric.broadcast(log_dir, src=0)
     elif log_dir == "/tmp":
@@ -134,6 +139,8 @@ def train(cfg: DictConfig) -> float:
         cfg_str=OmegaConf.to_yaml(cfg, sort_keys=True),
         begin_epoch=epoch,
         begin_step=step,
+        best_metric=best_metric,
+        best_epoch=best_epoch,
         n_epochs=cfgr.n_epochs,
         total_steps=cfgr.total_steps,
         n_accum_steps=cfgr.n_accum_steps,

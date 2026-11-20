@@ -32,6 +32,8 @@ def train(
     cfg_str: str,
     begin_epoch: int = 0,
     begin_step: int = 0,
+    best_metric: float | None = None,
+    best_epoch: int | None = None,
     n_epochs: int = -1,
     total_steps: int = -1,
     n_accum_steps: int = 1,
@@ -53,8 +55,10 @@ def train(
             "detect_divergence and patience need a watched_metric: they rely on the "
             "best checkpoint."
         )
-    best_epoch: int | None = None
-    best_metric = float("-inf") if watched_metric_strategy == "max" else float("inf")
+    if best_metric is None:
+        best_metric = (
+            float("-inf") if watched_metric_strategy == "max" else float("inf")
+        )
     is_better = operator.ge if watched_metric_strategy == "max" else operator.le
 
     logger = None  # delayed initialization
@@ -102,7 +106,8 @@ def train(
         if fabric.is_global_zero:
             if logger is None:
                 os.makedirs(log_dir, exist_ok=True)
-                utils.logs.write_file(cfg_str, filename="config.yaml", log_dir=log_dir)
+                if begin_epoch == 0:
+                    utils.logs.write_file(cfg_str, "config.yaml", log_dir=log_dir)
                 logger = SummaryWriter(log_dir)
             _log_epoch(logger, {"epoch": epoch, "step": step} | metrics, step)
 
@@ -123,15 +128,6 @@ def train(
             loss_history = []
             continue
 
-        utils.checkpoint.save_training(
-            fabric=fabric,
-            path=path_last_ckpt,
-            epoch=epoch,
-            step=step,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            model=training_module,
-        )
         has_all_metrics = validated or val_stride == 0
         if (
             has_all_metrics
@@ -145,12 +141,26 @@ def train(
             metrics[watched_metric], best_metric
         ):
             best_epoch = epoch
-            best_metric = metrics[watched_metric]
+            best_metric = float(metrics[watched_metric])
+        utils.checkpoint.save_training(
+            fabric=fabric,
+            path=path_last_ckpt,
+            epoch=epoch,
+            step=step,
+            best_metric=best_metric,
+            best_epoch=best_epoch,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            model=training_module,
+        )
+        if best_epoch == epoch:
             utils.checkpoint.save_training(
                 fabric=fabric,
                 path=path_best_ckpt,
                 epoch=epoch,
                 step=step,
+                best_metric=best_metric,
+                best_epoch=best_epoch,
                 optimizer=optimizer,
                 scheduler=scheduler,
                 model=training_module,

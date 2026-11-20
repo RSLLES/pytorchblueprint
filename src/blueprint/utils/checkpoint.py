@@ -31,15 +31,15 @@ def load_training(
     optimizer: Optimizer | None = None,
     scheduler: LRScheduler | None = None,
     strict: bool = True,
-) -> tuple[int, int]:
-    """Load training module and optimizer states, returning epoch and step."""
+) -> tuple[int, int, float, int | None]:
+    """Load training states, returning epoch, step, best metric and best epoch."""
     d = fabric.load(ckpt_path)
     model.load_state_dict(d["model"], strict=strict)
     if optimizer is not None:
         optimizer.load_state_dict(d["optimizer"])
     if scheduler is not None:
         scheduler.load_state_dict(d["scheduler"])
-    return d["epoch"], d["step"]
+    return d["epoch"], d["step"], d["best_metric"], d["best_epoch"]
 
 
 ### Save ###
@@ -50,6 +50,8 @@ def save_training(
     path: str,
     epoch: int,
     step: int,
+    best_metric: float,
+    best_epoch: int | None,
     model: Module,
     optimizer: Optimizer,
     scheduler: LRScheduler,
@@ -59,6 +61,8 @@ def save_training(
     state = {
         "epoch": epoch,
         "step": step,
+        "best_metric": best_metric,
+        "best_epoch": best_epoch,
         "optimizer": optimizer,
         "scheduler": scheduler,
         "model": model,

@@ -42,7 +42,7 @@ def test(cfg: DictConfig) -> dict[str, Tensor | Figure]:
     if fabric.is_global_zero:
         utils.model.present_model(model)
     training_module = fabric.setup(training_module)
-    epoch, step = utils.checkpoint.load_training(
+    epoch, step, _, _ = utils.checkpoint.load_training(
         fabric=fabric,
         ckpt_path=cfgr.weights_path,
         model=training_module,
