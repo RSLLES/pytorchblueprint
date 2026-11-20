@@ -57,6 +57,6 @@ Be concise when you write or code, never hasty when you think: weigh the pros an
 - Beyond 1 h, also wake every 58 min for a quick health check: process alive, logs advancing, no NaN. A job can fail without ending; the waiter won't notice, and hours are lost.
 
 ## Git
-- Start with `git status`. If the worktree is dirty, work in a new worktree under `.worktrees/`, where any git command except remote ones is allowed. Otherwise work in place, and never commit, rebase, reset, switch, or checkout without my instruction.
+- Start with `git status`. If the tree is dirty, work in a new worktree under `.worktrees/`, where any git command except remote ones is allowed. Otherwise work in place, and never commit, rebase, reset, switch, or checkout without my instruction.
 - Never push: the remote is mine.
 - One commit per task, with `--no-gpg-sign`; no Claude co-author.
