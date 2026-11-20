@@ -34,21 +34,19 @@ def get_rank_generator(
 
 
 @torch.compiler.disable()
-def derive_new_seed(seed: int | Tensor) -> int | Tensor:
+def derive_new_seed(seed: int) -> int:
     """Derive a new seed from `seed` using a dedicated generator."""
-    gen = get_generator(seed)
-    new_seed = torch.randint(
-        0, _MAX_SEED, size=(), device=gen.device, dtype=torch.int64, generator=gen
-    )
-    new_seed = int(new_seed.item()) if isinstance(seed, int) else new_seed
-    return new_seed
+    new_seed = torch.tensor(seed)
+    derive_new_seed_(new_seed)
+    return int(new_seed)
 
 
 @torch.compiler.disable()
 def derive_new_seed_(seed: Tensor):
     """In-place version of derive_new_seed."""
     gen = get_generator(seed)
-    new_seed = torch.randint(
-        0, _MAX_SEED, size=(), device=gen.device, dtype=torch.int64, generator=gen
+    seed.copy_(
+        torch.randint(
+            0, _MAX_SEED, size=(), device=gen.device, dtype=torch.int64, generator=gen
+        )
     )
-    seed.copy_(new_seed)
