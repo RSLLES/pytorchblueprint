@@ -38,7 +38,7 @@ def train(cfg: DictConfig) -> float:
         batch_size=cfgr.batch_size,
         n_workers=cfgr.n_workers,
         world_size=fabric.world_size,
-        shuffle=False,
+        shuffle=True,
     )
     ds_val = instantiate(cfg.ds_val)
     dl_val = utils.dataloader.build_dl(
