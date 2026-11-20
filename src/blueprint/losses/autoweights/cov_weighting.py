@@ -21,7 +21,6 @@ class CoVWeighting(nn.Module):
         self.n_losses = n_losses
         self.t_lim = t_lim
 
-        # Initialize moving averages for mean and variance estimation
         self.register_buffer("t", torch.tensor(-2.0))
         self.register_buffer("mu_L", torch.zeros(n_losses))
         self.register_buffer("mu_l", torch.zeros(n_losses))
@@ -38,7 +37,6 @@ class CoVWeighting(nn.Module):
 
         losses = losses.detach()
 
-        # warmup ?
         if self.t < 0.0:
             self.mu_l = losses / (self.mu_L + self.eps)
             self.mu_L = losses

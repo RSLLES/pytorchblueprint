@@ -24,7 +24,6 @@ def test(cfg: DictConfig) -> dict[str, Tensor | Figure]:
     if fabric.is_global_zero:
         print(OmegaConf.to_yaml(cfg, sort_keys=True))
 
-    # data
     ds_test = instantiate(cfg.ds_test)
     dl_test = utils.dataloader.build_dl(
         ds_test,
@@ -35,7 +34,7 @@ def test(cfg: DictConfig) -> dict[str, Tensor | Figure]:
     )
     dl_test = fabric.setup_dataloaders(dl_test)
 
-    # model; checkpoints hold the whole training module
+    # checkpoints hold the whole training module
     with fabric.init_module(empty_init=cfgr.strict_loading):
         model = instantiate(cfg.model)
         training_module = instantiate(cfg.trainer, model=model)

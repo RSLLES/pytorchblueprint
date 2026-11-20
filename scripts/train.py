@@ -15,7 +15,6 @@ from blueprint import engine, optimizers, utils
 @utils.oom.handle_oom()
 def train(cfg: DictConfig) -> float:
     """Train a configuration."""
-    # init
     cfgr = cfg.runtime
     utils.torch.initialize_torch(detect_anomaly=cfgr.detect_anomaly)
     fabric = utils.fabric.initialize_fabric(
@@ -31,7 +30,6 @@ def train(cfg: DictConfig) -> float:
     if fabric.is_global_zero:
         print(OmegaConf.to_yaml(cfg, sort_keys=True))
 
-    # data
     ds_train = instantiate(cfg.ds_train)
     dl_train = utils.dataloader.build_dl(
         ds_train,
@@ -52,7 +50,6 @@ def train(cfg: DictConfig) -> float:
         cfg, n_samples=len(ds_train), world_size=fabric.world_size
     )
 
-    # model
     # a non-strict load leaves missing parameters as they were initialized
     load_all = ("ckpt_path" in cfgr or "weights_path" in cfgr) and cfgr.strict_loading
     with fabric.init_module(empty_init=load_all):
@@ -72,7 +69,6 @@ def train(cfg: DictConfig) -> float:
         if fabric.is_global_zero:
             print("Compilation enabled.")
 
-    # acceleration
     training_module, optimizer = fabric.setup(training_module, optimizer)
     dl_train, dl_val = fabric.setup_dataloaders(dl_train, dl_val)
     if explain:
@@ -103,7 +99,7 @@ def train(cfg: DictConfig) -> float:
         if fabric.is_global_zero:
             print(f"Weights loaded from {cfgr.weights_path}")
 
-    # logs; an OOM retry reruns this function, so the resolved path stays out of cfg
+    # an OOM retry reruns this function, so the resolved path stays out of cfg
     log_dir = cfgr.get("log_dir")
     tempdir = None
     if "ckpt_path" in cfgr:
@@ -122,11 +118,9 @@ def train(cfg: DictConfig) -> float:
     if fabric.is_global_zero:
         print(f"Log directory is {log_dir}")
 
-    # training options
     if not cfgr.detect_divergence and fabric.is_global_zero:
         print("Warning: divergence detection is disabled.")
 
-    # train
     best_metric = engine.train(
         fabric=fabric,
         optimizer=optimizer,

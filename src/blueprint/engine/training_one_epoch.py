@@ -87,8 +87,6 @@ def train_one_epoch(
                     metrics[f"lr{i}"] = lr
                 scheduler.step()
 
-                # formatting reads the metrics from the GPU and is slow: only do it
-                # when the bar redraws
                 if bar.update(1):
                     bar.set_text(utils.format.format_metrics({"step": step} | metrics))
                 prof.step()

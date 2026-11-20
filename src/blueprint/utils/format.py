@@ -30,7 +30,7 @@ def format_object(x: Any) -> str:
         x = x.item()
     if isinstance(x, float | int):
         return format_number(x)
-    return f" {x}"  # other types are printed as they are...
+    return f" {x}"
 
 
 def format_number(x: float | int, n_digits: int = 3) -> str:

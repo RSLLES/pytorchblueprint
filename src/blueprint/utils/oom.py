@@ -21,8 +21,6 @@ def is_oom(error: BaseException) -> bool:
 
 def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool) -> None:
     """Turn a one-rank OOM into an every-rank one, so the retry stays collective."""
-    # a rank that retries alone leaves the others waiting on collectives it will never
-    # issue, which surfaces half an hour later as an NCCL timeout with no OOM in sight
     votes = torch.tensor(float(local_oom), device=fabric.device)
     n_oom = int(fabric.all_reduce(votes, reduce_op="sum"))
     if n_oom > 0:
@@ -35,7 +33,6 @@ def handle_oom(cfg_attr_name="cfg"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Find the cfg object from args or kwargs
             cfg = kwargs.get(cfg_attr_name)
             if cfg is None:
                 for arg in args:

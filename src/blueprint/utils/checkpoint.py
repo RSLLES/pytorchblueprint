@@ -10,8 +10,6 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 
-### Logs ###
-
 
 def get_ckpts_path(log_dir: str, ckpt_dir: str | None = None) -> tuple[str, str]:
     """Return the paths to the last and best checkpoint files."""
@@ -19,9 +17,6 @@ def get_ckpts_path(log_dir: str, ckpt_dir: str | None = None) -> tuple[str, str]
     path_best_ckpt = os.path.join(root, "best.tar")
     path_last_ckpt = os.path.join(root, "last.tar")
     return path_last_ckpt, path_best_ckpt
-
-
-### Load ###
 
 
 def load_training(
@@ -40,9 +35,6 @@ def load_training(
     if scheduler is not None:
         scheduler.load_state_dict(d["scheduler"])
     return d["epoch"], d["step"], d["best_metric"], d["best_epoch"]
-
-
-### Save ###
 
 
 def save_training(

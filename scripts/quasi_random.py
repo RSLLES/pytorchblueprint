@@ -44,9 +44,8 @@ def generate_quasi_random_sequence(
 
 def main():  # noqa: D103
     n_digits = 3
-    parameters = [
-        Parameter(vmin=1e-4, vmax=1e-2, log=True),  # entropy reg
-    ]
+    entropy_reg = Parameter(vmin=1e-4, vmax=1e-2, log=True)
+    parameters = [entropy_reg]
 
     samples = generate_quasi_random_sequence(parameters, N=32)
 

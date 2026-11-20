@@ -127,8 +127,8 @@ def linear_mmd(x: Tensor, y: Tensor, kernel: nn.Module, reduction: str) -> Tenso
 
     K = kernel(z1, z2, reduction="none")
     mmd_linear_sq = K[:, :, 0, 0] + K[:, :, 1, 1] - K[:, :, 0, 1] - K[:, :, 1, 0]
-    mmd_linear_sq = mmd_linear_sq.mean(dim=1)  # N//2 dimension
-    mmd_linear_sq = mmd_linear_sq.amax(dim=-1)  # kernels dimension
+    mmd_linear_sq = mmd_linear_sq.mean(dim=1)
+    mmd_linear_sq = mmd_linear_sq.amax(dim=-1)
     return reduce(mmd_linear_sq, dim=0, mode=reduction)
 
 

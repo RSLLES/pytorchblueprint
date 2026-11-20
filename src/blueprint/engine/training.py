@@ -61,7 +61,7 @@ def train(
         )
     is_better = operator.ge if watched_metric_strategy == "max" else operator.le
 
-    logger = None  # delayed initialization
+    logger = None
     loss_history = []
     path_last_ckpt, path_best_ckpt = utils.checkpoint.get_ckpts_path(log_dir)
     step = begin_step

@@ -20,7 +20,7 @@ def initialize_fabric(
     strategy = "ddp_find_unused_parameters_true" if find_unused_parameters else "auto"
     fabric = Fabric(devices=devices, precision=precision, strategy=strategy)
     fabric.seed_everything(seed)
-    if not _is_using_cli():  # delegate launch call to CLI
+    if not _is_using_cli():
         fabric.launch()
     return fabric
 

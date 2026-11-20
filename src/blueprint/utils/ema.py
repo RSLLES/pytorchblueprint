@@ -25,7 +25,6 @@ class ExpMovingAverage(nn.Module):
         super().__init__()
         self.lambd = lambd
         self.register_buffer("weighted_sum", torch.zeros((n_elements,)))
-        # 1 - (1 - lambd)^t after t updates; dividing by it removes the bias toward 0
         self.register_buffer("total_weight", torch.zeros(()))
 
     @torch.no_grad()

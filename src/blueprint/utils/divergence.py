@@ -28,5 +28,4 @@ def detect_divergence(
     med = torch.quantile(ref, q=0.5)
     mad = torch.quantile(torch.abs(ref - med), q=0.5)
 
-    # The jump must also be material: a flat history has a null MAD.
     return bool(last - med > torch.maximum(rtol * mad, min_rel_jump * med.abs()))
