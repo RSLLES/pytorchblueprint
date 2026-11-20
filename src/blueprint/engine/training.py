@@ -122,9 +122,12 @@ def train(
                 fabric=fabric,
                 ckpt_path=path_best_ckpt,
                 optimizer=optimizer,
-                scheduler=scheduler,
                 model=training_module,
             )
+            for group, lr in zip(
+                optimizer.param_groups, scheduler.get_last_lr(), strict=True
+            ):
+                group["lr"] = lr
             loss_history = []
             continue
 
