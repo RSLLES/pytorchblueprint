@@ -60,14 +60,14 @@ def format_string(s: str) -> str:
 
 
 def format_duration(seconds: float) -> str:
-    """Format a duration with its two largest units (3h42m, 12m30s, 45s)."""
-    units = [("d", 86400), ("h", 3600), ("m", 60), ("s", 1)]
+    """Format a duration as ddd-hh:mm:ss."""
+    units = [("-", 86400), (":", 3600), (":", 60), ("", 1)]
     remaining = int(seconds)
     parts = []
     for name, size in units:
         value, remaining = divmod(remaining, size)
         if value or parts:
-            parts.append(f"{value}{name}")
+            parts.append(f"{value:02d}{name}" if parts else f"{value}{name}")
         if len(parts) == 2:
             break
-    return "".join(parts) or "0s"
+    return "".join(parts) or "0"
