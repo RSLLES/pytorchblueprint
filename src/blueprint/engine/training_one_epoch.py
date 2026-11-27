@@ -24,7 +24,7 @@ def train_one_epoch(
     scheduler: LRScheduler,
     step: int,
     total_steps: int,
-    clock: TrainingClock | None,
+    clock: TrainingClock,
     grad_clip_norm: float | None,
     training_module: nn.Module,
     enable_profiling: bool,

@@ -65,7 +65,14 @@ def train(
     loss_history = []
     path_last_ckpt, path_best_ckpt = utils.checkpoint.get_ckpts_path(log_dir)
     step = begin_step
-    clock = TrainingClock(steps_left=total_steps - step) if total_steps > 0 else None
+    n_validations = sum(
+        should_validate(val_stride, e, n_epochs) for e in range(begin_epoch, n_epochs)
+    )
+    n_warmup_batches = min(5, len(dl_val)) if n_validations > 0 else 0
+    clock = TrainingClock(
+        steps_left=total_steps - step if total_steps > 0 else None,
+        val_batches_left=n_validations * len(dl_val) + n_warmup_batches,
+    )
     takes_optimizer_steps = len(dl_train) >= n_accum_steps
 
     epochs = (
@@ -78,6 +85,14 @@ def train(
         validated = False
         local_oom = False
         try:
+            if epoch == begin_epoch and n_warmup_batches > 0:
+                engine.validate(
+                    fabric=fabric,
+                    model=model,
+                    dl=dl_val,
+                    clock=clock,
+                    max_batches=n_warmup_batches,
+                )
             metrics, step = engine.train_one_epoch(
                 fabric=fabric,
                 dl=dl_train,
@@ -96,7 +111,9 @@ def train(
                 diverged = utils.divergence.detect_divergence(loss_history)
             validated = not diverged and should_validate(val_stride, epoch, n_epochs)
             if validated:
-                metrics |= engine.validate(fabric=fabric, model=model, dl=dl_val)
+                metrics |= engine.validate(
+                    fabric=fabric, model=model, dl=dl_val, clock=clock
+                )
         except RuntimeError as error:
             if not utils.oom.is_oom(error):
                 raise
@@ -109,7 +126,8 @@ def train(
                 if begin_epoch == 0:
                     utils.logs.write_file(cfg_str, "config.yaml", log_dir=log_dir)
                 logger = SummaryWriter(log_dir)
-            _log_epoch(logger, {"epoch": epoch, "step": step} | metrics, step)
+            logs = {"epoch": epoch, "step": step} | metrics
+            _log_epoch(logger, logs, step, elapsed=clock.elapsed())
 
         if diverged:
             if best_epoch is None:
@@ -179,7 +197,7 @@ def train(
     return best_metric
 
 
-def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int):
+def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int, elapsed: str):
     for key, value in logs.items():
         if isinstance(value, Tensor) and value.nelement() > 1:
             logger.add_tensor(tag=key, tensor=value, global_step=step)
@@ -187,7 +205,7 @@ def _log_epoch(logger: SummaryWriter, logs: dict[str, Any], step: int):
             logger.add_figure(tag=key, figure=value, global_step=step)
         else:
             logger.add_scalar(tag=key, scalar_value=value, global_step=step)
-    print(utils.format.format_metrics(logs))
+    print(utils.format.format_metrics({"elapsed": elapsed} | logs))
 
 
 def should_validate(val_stride: int, epoch: int, n_epochs: int) -> bool:

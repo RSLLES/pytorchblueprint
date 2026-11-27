@@ -4,34 +4,68 @@
 import shutil
 import textwrap
 import time
+from dataclasses import dataclass
 
 from tqdm import tqdm
 
 from blueprint.utils import format
 
 
-class TrainingClock:
-    """Measure the run's step rate, ignoring the first step's one-off compile cost."""
+@dataclass
+class _Timing:
+    """Time spent on the timed steps of one kind, and how many steps are left."""
 
-    def __init__(self, steps_left: int):
-        self.steps_left = steps_left
-        self._t_first_step: float | None = None
-        self._steps_timed = 0
+    left: int | None
+    seconds: float = 0.0
+    n_timed: int = 0
+    started: bool = False
+
+
+class TrainingClock:
+    """Time the run; estimate the time left from steps and validation batches.
+
+    Each wall-clock interval is charged to the kind of step that ends it. The run's
+    first interval of each kind is not: it carries one-off setup and compile costs.
+    """
+
+    def __init__(self, steps_left: int | None, val_batches_left: int):
+        """Start the clock; steps_left is None for a run of unbounded length."""
+        self._t_start = self._t_last = time.monotonic()
+        self._steps = _Timing(left=steps_left)
+        self._val_batches = _Timing(left=val_batches_left)
 
     def count_step(self, n: int = 1):
-        """Record n finished steps; the run's first one only starts the clock."""
-        self.steps_left -= n
-        if self._t_first_step is None:
-            self._t_first_step = time.monotonic()
-            n -= 1
-        self._steps_timed += n
+        """Record n finished training steps."""
+        self._count(self._steps, n)
+
+    def count_val_batch(self):
+        """Record a finished validation batch."""
+        self._count(self._val_batches, 1)
+
+    def _count(self, timing: _Timing, n: int):
+        now = time.monotonic()
+        if timing.left is not None:
+            timing.left -= n
+        if timing.started:
+            timing.seconds += now - self._t_last
+            timing.n_timed += n
+        timing.started = True
+        self._t_last = now
+
+    def elapsed(self) -> str:
+        """Time since the clock started."""
+        return format.format_duration(time.monotonic() - self._t_start)
 
     def eta(self) -> str | None:
-        """Time left for the whole run, or None until a step has been timed."""
-        if self._t_first_step is None or self._steps_timed == 0:
+        """Time left for the whole run, or None if unbounded or no step is timed yet."""
+        if self._steps.left is None or self._steps.n_timed == 0:
             return None
-        elapsed = time.monotonic() - self._t_first_step
-        return format.format_duration(elapsed / self._steps_timed * self.steps_left)
+        seconds = sum(
+            timing.seconds / timing.n_timed * timing.left
+            for timing in (self._steps, self._val_batches)
+            if timing.n_timed > 0 and timing.left is not None
+        )
+        return format.format_duration(seconds)
 
 
 class WrappedTextProgressBar:
