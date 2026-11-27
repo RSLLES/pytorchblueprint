@@ -27,8 +27,8 @@ def build_dl(
     n_workers = interpret_n_workers(n_workers, world_size=world_size)
     dl = DataLoader(
         ds,
-        collate_fn=ds.collate_fn,
-        batch_size=min(batch_size, max(len(ds), 1)),
+        collate_fn=ds.collate_fn,  # ty:ignore[unresolved-attribute]
+        batch_size=min(batch_size, max(len(ds), 1)),  # ty:ignore[invalid-argument-type]
         num_workers=n_workers,
         shuffle=shuffle,
         pin_memory=True,

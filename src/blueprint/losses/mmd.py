@@ -28,6 +28,7 @@ https://arxiv.org/abs/2502.20755
 """
 
 import math
+from typing import override
 
 import torch
 from torch import Tensor, nn
@@ -161,7 +162,8 @@ class MMD(nn.Module):
         self.kernel = kernel
         self.reduction = reduction
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         return mmd(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
 
@@ -173,7 +175,8 @@ class MMDMax(nn.Module):
         self.kernel = kernel
         self.reduction = reduction
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         return mmd_max(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
 
@@ -185,7 +188,8 @@ class MMDFuse(nn.Module):
         self.kernel = kernel
         self.reduction = reduction
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         return mmd_fuse(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
 
@@ -197,7 +201,8 @@ class MMDLinear(nn.Module):
         self.kernel = kernel
         self.reduction = reduction
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         return linear_mmd(x=x, y=y, kernel=self.kernel, reduction=self.reduction)
 
 
@@ -210,7 +215,8 @@ class MMDRFF(nn.Module):
         self.n_features = n_features
         self.reduction = reduction
 
-    def forward(self, x: Tensor, y: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor, y: Tensor) -> Tensor:
         return rff_mmd(
             x=x,
             y=y,

@@ -2,6 +2,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from math import ceil
+from typing import override
 
 import torch
 from torch import Tensor
@@ -50,7 +51,8 @@ class KLLOnlineQuantile(Metric):
             "levels", default=torch.empty(0, dtype=torch.long), dist_reduce_fx="cat"
         )
 
-    def update(self, x: Tensor):  # noqa: D102
+    @override
+    def update(self, x: Tensor):
         x = x.reshape(-1, 1) if x.ndim == 1 else x.reshape(-1, x.size(-1))
         self.values = torch.cat([self.values, x])
         self.levels = torch.cat([self.levels, x.new_zeros(x.size(0), dtype=torch.long)])

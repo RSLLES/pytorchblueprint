@@ -9,7 +9,7 @@ The pattern follows nanochat (https://github.com/karpathy/nanochat), Dion
 """
 
 from collections.abc import Callable, Iterable
-from typing import Any
+from typing import Any, overload, override
 
 import torch
 from torch import nn
@@ -21,9 +21,10 @@ def split_param_groups(module: nn.Module, model: nn.Module) -> list[dict[str, An
 
     Defining hidden_matrices() is optional; only models trained with MuonAdamW need it.
     """
-    if not hasattr(model, "hidden_matrices"):
+    hidden_matrices = getattr(model, "hidden_matrices", None)
+    if hidden_matrices is None:
         return [{"params": list(module.parameters()), "use_muon": False}]
-    hidden = list(model.hidden_matrices())
+    hidden = list(hidden_matrices())
     hidden_ids = {id(p) for p in hidden}
     others = [p for p in module.parameters() if id(p) not in hidden_ids]
     return [
@@ -50,7 +51,14 @@ class MuonAdamW(Optimizer):
         # sharing the inner group dicts lets one scheduler drive both optimizers
         super().__init__(self.muon.param_groups + self.adamw.param_groups, {})
 
-    def step(self, closure: Callable[[], float] | None = None) -> float | None:  # noqa: D102
+    @overload
+    def step(self, closure: None = None) -> None: ...
+
+    @overload
+    def step(self, closure: Callable[[], float]) -> float: ...
+
+    @override
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         loss = None
         if closure is not None:
             with torch.enable_grad():
@@ -59,10 +67,12 @@ class MuonAdamW(Optimizer):
         self.adamw.step()
         return loss
 
-    def state_dict(self) -> dict[str, Any]:  # noqa: D102
+    @override
+    def state_dict(self) -> dict[str, Any]:
         return {"muon": self.muon.state_dict(), "adamw": self.adamw.state_dict()}
 
-    def load_state_dict(self, state_dict: dict[str, Any]):  # noqa: D102
+    @override
+    def load_state_dict(self, state_dict: dict[str, Any]):
         self.muon.load_state_dict(state_dict["muon"])
         self.adamw.load_state_dict(state_dict["adamw"])
         # the inner loads replace their group dicts, which the scheduler must reach

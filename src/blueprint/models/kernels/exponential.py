@@ -3,6 +3,8 @@
 
 r"""Implement a general kernel of the form exp(- ||x - y||^\alpha)."""
 
+from typing import override
+
 import torch
 from torch import Tensor, nn
 
@@ -43,7 +45,8 @@ class ExponentialKernel(nn.Module):
         self.ema_q05 = ExpMovingAverage(1e-3)
         self.ema_q95 = ExpMovingAverage(1e-3)
 
-    def forward(self, z1: Tensor, z2: Tensor, reduction: str = "mean") -> Tensor:  # noqa: D102
+    @override
+    def forward(self, z1: Tensor, z2: Tensor, reduction: str = "mean") -> Tensor:
         dists = torch.cdist(z1, z2, p=self.p).pow(self.p)
         bandwidths = quantile_bandwidths(
             dists,
@@ -73,7 +76,8 @@ class LaplaceGaussianKernel(nn.Module):
         self.ema_l2_q05 = ExpMovingAverage(ema_lambd)
         self.ema_l2_q95 = ExpMovingAverage(ema_lambd)
 
-    def forward(self, z1: Tensor, z2: Tensor, reduction: str = "mean") -> Tensor:  # noqa: D102
+    @override
+    def forward(self, z1: Tensor, z2: Tensor, reduction: str = "mean") -> Tensor:
         l1 = torch.cdist(z1, z2, p=1)
         l2_sq = torch.cdist(z1, z2, p=2).square()
 

@@ -12,6 +12,8 @@ reinforcement learning. Mach Learn 8, 229-256 (1992). https://doi.org/10.1007/BF
 baseline for free! ICLR, 2019. https://openreview.net/forum?id=r1lgTGL5DE
 """
 
+from typing import override
+
 import torch
 from torch import Tensor, nn
 
@@ -33,7 +35,8 @@ class BaselineReinforce(nn.Module):
         self.ema_mean = ExpMovingAverage(lambd=lambd, n_elements=1)
         self.ema_var = ExpMovingAverage(lambd=lambd, n_elements=1)
 
-    def forward(self, loss: Tensor, log_prob: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, loss: Tensor, log_prob: Tensor) -> Tensor:
         if self.ensure_detached_loss:
             loss = loss.detach()
 
@@ -56,7 +59,8 @@ class LOOReinforce(nn.Module):
         self.ensure_detached_loss = ensure_detached_loss
         self.eps = eps
 
-    def forward(self, losses: Tensor, log_prob: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, losses: Tensor, log_prob: Tensor) -> Tensor:
         if losses.ndim != 1:
             raise ValueError(f"Expect 1D tensor for losses, got {losses.shape}")
         if losses.size(0) < 3:

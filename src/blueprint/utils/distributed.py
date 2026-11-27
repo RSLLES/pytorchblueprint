@@ -23,12 +23,14 @@ def global_rank() -> int:
 
 
 @torch.compiler.disable()
-def _all_reduce(x: Tensor, op: dist.ReduceOp) -> Tensor:
+def _all_reduce(x: Tensor, op: dist.ReduceOp.RedOpType) -> Tensor:
     x = x.clone()
     dist.all_reduce(x, op=op)
     return x
 
 
-def reduce_across_ranks(x: Tensor, op: dist.ReduceOp = dist.ReduceOp.AVG) -> Tensor:
+def reduce_across_ranks(
+    x: Tensor, op: dist.ReduceOp.RedOpType = dist.ReduceOp.AVG
+) -> Tensor:
     """Combine a gradient-free statistic so every rank reads the same value."""
     return _all_reduce(x, op) if is_distributed() else x

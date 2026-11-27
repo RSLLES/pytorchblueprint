@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 import torch
 from torch import Tensor, nn
 
@@ -17,6 +19,7 @@ class FourierEmbeddings(nn.Module):
         angular_freqs = scale * 2 * torch.pi * torch.randn(input_dim, embed_dim // 2)
         self.register_buffer("angular_freqs", angular_freqs)
 
-    def forward(self, t: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, t: Tensor) -> Tensor:
         angles = t @ self.angular_freqs
         return torch.cat([torch.sin(angles), torch.cos(angles)], dim=-1)

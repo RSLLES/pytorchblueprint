@@ -23,7 +23,7 @@ def is_oom(error: BaseException) -> bool:
 def raise_on_any_rank_oom(fabric: Fabric, local_oom: bool):
     """Turn a one-rank OOM into an every-rank one, so the retry stays collective."""
     votes = torch.tensor(float(local_oom), device=fabric.device)
-    n_oom = int(fabric.all_reduce(votes, reduce_op="sum"))
+    n_oom = int(fabric.all_reduce(votes, reduce_op="sum"))  # ty:ignore[invalid-argument-type]
     if n_oom > 0:
         raise DistributedOutOfMemory(f"out of memory on {n_oom} of the ranks.")
 

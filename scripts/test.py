@@ -50,7 +50,7 @@ def test(cfg: DictConfig) -> dict[str, Tensor | Figure]:
     if fabric.is_global_zero:
         print(f"Weights loaded from {cfgr.weights_path}: epoch {epoch} step {step}.")
 
-    metrics = engine.validate(fabric=fabric, model=model, dl=dl_test)
+    metrics = engine.validate(fabric=fabric, model=model, dl=dl_test)  # ty:ignore[invalid-argument-type]
     if fabric.is_global_zero:
         print(utils.format.format_metrics(metrics))
     return metrics

@@ -5,7 +5,7 @@
 
 import math
 import warnings
-from typing import Any
+from typing import Any, override
 
 import torch
 from torch import Tensor
@@ -44,7 +44,8 @@ class MedianOfMeans(Metric):
         """Group count such that failure probability is 1/n_elements."""
         return max(1, math.ceil(8.0 * math.log(n_elements)))
 
-    def update(self, value: float | Tensor):  # noqa: D102
+    @override
+    def update(self, value: float | Tensor):
         if self._gen is None:
             self._gen = get_generator(self.seed, device=self.device)
         # updated every training step, so it must not wait for the GPU: a blocking
@@ -56,7 +57,8 @@ class MedianOfMeans(Metric):
         self.sums.index_add_(0, groups, value.to(self.sums.dtype))
         self.counts.index_add_(0, groups, torch.ones_like(groups))
 
-    def compute(self) -> Tensor:  # noqa: D102
+    @override
+    def compute(self) -> Tensor:
         mask = self.counts > 0
         if not mask.any():
             return torch.tensor(float("nan"), device=self.device)

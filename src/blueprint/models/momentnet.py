@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 from torch import Tensor, nn
 
 from .basics import FourierEmbeddings, ResnetBlocks
@@ -30,7 +32,8 @@ class MomentNet(nn.Module):
         """Return the weight matrices between the input and output layers."""
         return [m.weight for m in self.body.modules() if isinstance(m, nn.Linear)]
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         output_shape = x.shape[:-1] + (self.output_dim,)
         x_flat = x.reshape(-1, x.size(-1))
         outputs_flat = self.head(self.body(self.embed(x_flat)))

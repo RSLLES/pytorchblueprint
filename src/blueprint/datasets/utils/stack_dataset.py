@@ -11,12 +11,12 @@ class StackDataset(torch.utils.data.StackDataset):
 
     def increment_seed(self):
         """Advance each dataset internal seed."""
-        for ds in self.datasets.values():
+        for ds in self.datasets.values():  # ty:ignore[unresolved-attribute]
             ds.increment_seed()
 
     def collate_fn(self, batch: list[dict[str, Any]]) -> dict[str, Any]:
         """Collate each dataset with its own collate function."""
         return {
             key: ds.collate_fn([e[key] for e in batch])
-            for key, ds in self.datasets.items()
+            for key, ds in self.datasets.items()  # ty:ignore[unresolved-attribute]
         }

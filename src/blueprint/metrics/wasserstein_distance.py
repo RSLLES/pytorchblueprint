@@ -3,6 +3,8 @@
 
 """Wasserstein distance as a torchmetric."""
 
+from typing import override
+
 import torch
 from scipy.optimize import linear_sum_assignment
 from torch import Tensor
@@ -29,11 +31,13 @@ class WassersteinDistance(Metric):
         self.add_state("x_target", default=[], dist_reduce_fx="cat")
         self.p = p
 
-    def update(self, x_pred: Tensor, x_target: Tensor):  # noqa: D102
+    @override
+    def update(self, x_pred: Tensor, x_target: Tensor):
         self.x_pred.append(x_pred)
         self.x_target.append(x_target)
 
-    def compute(self) -> Tensor:  # noqa: D102
+    @override
+    def compute(self) -> Tensor:
         x_pred = dim_zero_cat(self.x_pred)
         x_target = dim_zero_cat(self.x_target)
         dists = torch.cdist(x_pred, x_target, p=2.0)

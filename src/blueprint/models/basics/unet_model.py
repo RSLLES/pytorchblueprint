@@ -6,6 +6,8 @@
 Modified from https://github.com/milesial/Pytorch-UNet/tree/master .
 """
 
+from typing import override
+
 from torch import Tensor, nn
 
 from .unet_parts import DoubleConv, Down, OutConv, Up
@@ -52,7 +54,8 @@ class UNet(nn.Module):
             features //= 2
         self.head = OutConv(features, out_channels)
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         x = self.inc(x)
 
         X = [x]

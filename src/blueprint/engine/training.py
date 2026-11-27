@@ -7,6 +7,7 @@ import os
 from typing import Any
 
 from lightning.fabric import Fabric
+from lightning.fabric.wrappers import _FabricModule
 from matplotlib.figure import Figure
 from torch import Tensor, nn
 from torch.optim import Optimizer
@@ -21,7 +22,7 @@ from blueprint.utils.progress_bar import TrainingClock
 def train(
     fabric: Fabric,
     model: nn.Module,
-    training_module: nn.Module,
+    training_module: _FabricModule,
     optimizer: Optimizer,
     scheduler: LRScheduler,
     dl_train: DataLoader,
@@ -79,7 +80,7 @@ def train(
         range(begin_epoch, n_epochs) if n_epochs >= 0 else itertools.count(begin_epoch)
     )
     for epoch in epochs:
-        dl_train.dataset.increment_seed()
+        dl_train.dataset.increment_seed()  # ty:ignore[unresolved-attribute]
         metrics = {}
         diverged = False
         validated = False

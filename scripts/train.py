@@ -107,12 +107,12 @@ def train(cfg: DictConfig) -> float:
             raise ValueError("A resumed run logs into its checkpoint's directory.")
         log_dir = os.path.dirname(cfgr.ckpt_path)
     elif log_dir is None:
-        log_dir = utils.logs.get_log_dir(cfgr.name) if fabric.is_global_zero else None
+        log_dir = utils.logs.get_log_dir(cfgr.name) if fabric.is_global_zero else ""
         log_dir = fabric.broadcast(log_dir, src=0)
     elif log_dir == "/tmp":
         if fabric.is_global_zero:
             tempdir = TemporaryDirectory()
-        log_dir = fabric.broadcast(tempdir.name if tempdir else None, src=0)
+        log_dir = fabric.broadcast(tempdir.name if tempdir else "", src=0)
     elif os.path.exists(log_dir):
         raise ValueError(f"log_dir '{log_dir}' exists.")
     if fabric.is_global_zero:

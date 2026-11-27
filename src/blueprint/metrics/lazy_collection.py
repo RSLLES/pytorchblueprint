@@ -4,7 +4,7 @@
 """MetricCollection whose keys are created lazily via a factory."""
 
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, override
 
 from torchmetrics import Metric, MetricCollection
 
@@ -16,7 +16,8 @@ class LazyMetricCollection(MetricCollection):
         super().__init__({}, compute_groups=False)
         self._metric_factory = metric_factory
 
-    def update(self, values: Mapping[str, Any]):  # ty:ignore[invalid-method-override]  # noqa: D102
+    @override
+    def update(self, values: Mapping[str, Any]):  # ty:ignore[invalid-method-override]
         for key, value in values.items():
             if key not in self:
                 self.add_metrics({key: self._metric_factory()})

@@ -8,12 +8,12 @@ import sys
 from collections.abc import Callable, Generator
 
 from lightning.fabric import Fabric
-from lightning.fabric.connector import _is_using_cli
+from lightning.fabric.connector import _PRECISION_INPUT, _is_using_cli
 
 
 def initialize_fabric(
     seed: int,
-    precision: str = "32-true",
+    precision: _PRECISION_INPUT = "32-true",
     devices: str | int = "auto",
     find_unused_parameters: bool = False,
 ) -> Fabric:

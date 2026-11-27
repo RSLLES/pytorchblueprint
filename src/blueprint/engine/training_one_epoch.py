@@ -3,7 +3,7 @@
 
 import torch
 from lightning.fabric import Fabric
-from torch import nn
+from lightning.fabric.wrappers import _FabricModule
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
@@ -26,7 +26,7 @@ def train_one_epoch(
     total_steps: int,
     clock: TrainingClock,
     grad_clip_norm: float | None,
-    training_module: nn.Module,
+    training_module: _FabricModule,
     enable_profiling: bool,
 ) -> tuple[dict, int]:
     """Train for one epoch."""

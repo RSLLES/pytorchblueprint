@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 from torch import Tensor, nn
 
 
@@ -23,7 +25,8 @@ class ResnetBlock(nn.Module):
         )
         self.act = act_layer()
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         return self.act(x + self.block(x))
 
 
@@ -45,5 +48,6 @@ class ResnetBlocks(nn.Module):
             )
         )
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         return self.blocks(x)

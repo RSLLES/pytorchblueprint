@@ -1,6 +1,8 @@
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
+from typing import override
+
 from torch import Tensor, nn
 from torch.func import jacrev, vmap
 
@@ -14,7 +16,8 @@ class HyvarinenLoss(nn.Module):
         super().__init__()
         self.reduction = reduction
 
-    def forward(self, score_net: nn.Module, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, score_net: nn.Module, x: Tensor) -> Tensor:
         return hyvarinen_loss(score_net=score_net, x=x, reduction=self.reduction)
 
 

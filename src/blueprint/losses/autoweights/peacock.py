@@ -9,6 +9,8 @@ Proceedings of the IEEE/CVF International Conference on Computer Vision
 https://openaccess.thecvf.com/content/ICCV2025W/Findings/papers/Neo_Multi-Objective_Optimization_for_Deep_Neural_Network_Calibration_ICCVW_2025_paper.pdf
 """
 
+from typing import override
+
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
@@ -43,7 +45,8 @@ class PeacockWeighting(nn.Module):
         gradient_estimates = torch.sqrt(F.relu(decrease_rates) + self.eps)
         return (weights @ gradient_estimates).square()
 
-    def forward(  # noqa: D102
+    @override
+    def forward(
         self, losses: Tensor, return_weights: bool = False
     ) -> Tensor | tuple[Tensor, Tensor]:
         if losses.ndim != 1 or losses.size(0) != self.n_losses:

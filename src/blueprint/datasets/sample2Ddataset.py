@@ -29,10 +29,10 @@ class Sample2DDataset(Dataset):
     def __len__(self) -> int:
         return self.length
 
-    def __getitem__(self, idx: int) -> Tensor:
-        if idx < 0 or idx >= self.__len__():
-            raise IndexError(f"Index {idx} out of range for length {self.length}.")
-        seed = np.random.SeedSequence([self.seed, idx]).generate_state(1, np.uint64)
+    def __getitem__(self, index: int) -> Tensor:
+        if index < 0 or index >= self.__len__():
+            raise IndexError(f"Index {index} out of range for length {self.length}.")
+        seed = np.random.SeedSequence([self.seed, index]).generate_state(1, np.uint64)
         gen = blueprint.utils.random.get_generator(int(seed[0]))
         return self.sample(n=1, gen=gen).squeeze(0)
 

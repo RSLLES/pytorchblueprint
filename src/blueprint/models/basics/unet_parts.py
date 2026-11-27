@@ -6,6 +6,8 @@
 Inspired by https://github.com/milesial/Pytorch-UNet/tree/master .
 """
 
+from typing import override
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -47,7 +49,8 @@ class DoubleConv(nn.Module):
             act_layer(),
         )
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         return self.double_conv(x)
 
 
@@ -74,7 +77,8 @@ class Down(nn.Module):
             ),
         )
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         return self.maxpool_conv(x)
 
 
@@ -101,7 +105,8 @@ class Up(nn.Module):
             act_layer=act_layer,
         )
 
-    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x1: Tensor, x2: Tensor) -> Tensor:
         x1 = self.up(x1)
         pad_h = x2.size()[2] - x1.size()[2]
         pad_w = x2.size()[3] - x1.size()[3]
@@ -117,5 +122,6 @@ class OutConv(nn.Module):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
-    def forward(self, x: Tensor) -> Tensor:  # noqa: D102
+    @override
+    def forward(self, x: Tensor) -> Tensor:
         return self.conv(x)
